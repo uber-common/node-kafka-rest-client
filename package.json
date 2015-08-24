@@ -1,0 +1,71 @@
+{
+  "name": "kafka-rest-client",
+  "description": "Kafka rest client to produce json/ binary messages",
+  "version": "0.0.1",
+  "contributors": [
+    "Xiang Fu <xiangfu@uber.com>"
+  ],
+  "main": "./lib/kafka_producer.js",
+  "dependencies": {
+    "error": "^7.0.1",
+    "lb_pool": "^1.2.0"
+  },
+  "devDependencies": {
+    "buffertools": "*",
+    "chai": "*",
+    "istanbul": "0.1.46",
+    "jscoverage": "*",
+    "itape": "^1.5.0",
+    "jscs": "^1.7.3",
+    "jshint": "^2.5.2",
+    "mocha": "*",
+    "mockery": "*",
+    "nodemock": "*",
+    "opn": "^0.1.2",
+    "proxyquire": "*",
+    "rewire": "*",
+    "should": "*",
+    "sinon": "*",
+    "tape": "^4.2.0",
+    "glob": "*",
+    "uber-licence": "^1.2.0",
+    "uber-standard": "^3.6.4",
+    "pre-commit": "0.0.9"
+  },
+  "license": "MIT",
+  "scripts": {
+    "add-licence": "uber-licence",
+    "check-licence": "uber-licence --dry",
+    "test": "node test/index",
+    "lint": "standard --reporter stylish -v",
+    "jshint": "jshint --verbose .",
+    "jshint-pre-commit": "jshint --verbose $(git diff --cached --name-only | grep '\\.js$')",
+    "cover": "istanbul cover test/index.js",
+    "check-cover": "istanbul check-coverage",
+    "view-cover": "opn ./coverage/*/index.html"
+  },
+  "engine": {
+    "node": ">= 0.10.x"
+  },
+  "pre-commit": [
+    "check-licence",
+    "lint",
+    "jshint",
+    "jshint-pre-commit"
+  ],
+  "pre-commit.silent": true,
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:uber/node-kafka-rest-client.git"
+  },
+  "keywords": [
+    "kafka",
+    "rest",
+    "proxy",
+    "logger"
+  ],
+  "standard": {
+	"ignore": [
+	]
+  }
+}
