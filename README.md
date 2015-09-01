@@ -16,6 +16,17 @@ var configs = {
 };
 
 var kafkaProducer = new KafkaProducer(configs);
+kafkaProducer.connect(onConnect);
+
+function onConnect(err) {
+    /* eslint-disable no-undef,no-console,block-scoped-var */
+    if (!err) {
+        console.log('KafkaRestClient connected to kafka');
+    } else {
+        console.log('KafkaRestClient could not connect to kafka');
+    }
+    /* eslint-enable no-undef,no-console,block-scoped-var */
+}
 
 function msgCallback(err, res) {
     if (err) {

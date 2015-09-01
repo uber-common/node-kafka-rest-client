@@ -60,12 +60,24 @@ test('KafkaRestClient handle failed post', function testKafkaRestClientHanldeFai
         proxyPort: 4444,
         proxyRefreshTime: 0
     };
+    var timeStamp = Date.now() / 1000.0;
     var restClient = new KafkaRestClient(configs.proxyHost, configs.proxyPort, configs.proxyRefreshTime);
-    restClient.produce('testTopic0', 'msg0', 'binary', function assertHttpErrorReason(err) {
-        assert.equal(err.reason, 'connect ECONNREFUSED');
-    });
 
-    restClient.produce('testTopic10', 'msg0', 'binary', function assertErrorThrows(err) {
+    function getProduceMessage(topic, message, ts, type) {
+        var produceMessage = {};
+        produceMessage.topic = topic;
+        produceMessage.message = message;
+        produceMessage.timeStamp = ts;
+        produceMessage.type = type;
+        return produceMessage;
+    }
+
+    restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
+            function assertHttpErrorReason(err) {
+                assert.equal(err.reason, 'connect ECONNREFUSED');
+            });
+
+    restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'), function assertErrorThrows(err) {
         assert.throws(err, new Error('Topics Not Found.'));
     });
     restClient.close();
