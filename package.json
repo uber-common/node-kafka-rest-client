@@ -1,5 +1,5 @@
 {
-  "name": "node-kafka-rest-client",
+  "name": "kafka-rest-client",
   "description": "Kafka rest client to produce json/ binary messages",
   "version": "0.0.1",
   "contributors": [

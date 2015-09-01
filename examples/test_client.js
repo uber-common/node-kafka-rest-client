@@ -23,11 +23,22 @@ var KafkaProducer = require('../lib/kafka_producer');
 
 var configs = {
     proxyHost: 'localhost',
-    proxyPort: 18083,
+    proxyPort: 8080,
     proxyRefreshTime: 0
 };
 
+function onConnect(err) {
+    /* eslint-disable no-undef,no-console,block-scoped-var */
+    if (!err) {
+        console.log('KafkaRestClient connected to kafka');
+    } else {
+        console.log('KafkaRestClient could not connect to kafka');
+    }
+    /* eslint-enable no-undef,no-console,block-scoped-var */
+}
+
 var kafkaProducer = new KafkaProducer(configs);
+kafkaProducer.connect(onConnect);
 
 /* eslint-disable no-undef,no-console,block-scoped-var */
 function msgCallback(err, res) {
@@ -43,12 +54,15 @@ function msgCallback(err, res) {
 kafkaProducer.logLine('test', 'Important message', msgCallback);
 // Just dump log, no callback.
 kafkaProducer.logLine('test', 'Important message #1');
+// Just dump log, no callback.
+kafkaProducer.logLineWithTimeStamp('test', 'Important message #1.5', 'ts1.5');
 // Just sends the raw message directly to kafka
-kafkaProducer.produce('test', 'Important message #2', msgCallback);
-
+kafkaProducer.produce('test', 'Important message #2', 'ts2', msgCallback);
+// Just sends the raw message directly to kafka
+kafkaProducer.produce('test', 'Important message #2.5', 'ts2.5', msgCallback);
 /* eslint-disable no-undef,block-scoped-var */
 setTimeout(function produce3() {
-    kafkaProducer.produce('test', 'Important message #3', msgCallback);
+    kafkaProducer.produce('test', 'Important message #3', 'ts3', msgCallback);
 }, 2000);
 
 setTimeout(function produce4() {
