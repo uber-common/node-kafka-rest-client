@@ -1,9 +1,6 @@
 # node-kafka-rest-client
 
-A rest client for producing messages to kafka.
-
-This library only producing json and binary messages to kafka. If you want to consume
-from kafka please use https://github.com/uber/nodesol or https://github.com/uber/kafka-node
+A rest client for producing JSON and binary messages to kafka.
 
 ## Usage
 
