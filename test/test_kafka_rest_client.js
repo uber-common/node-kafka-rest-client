@@ -40,7 +40,12 @@ test('KafkaRestClient can discover topics', function testKafkaRestClientTopicDis
         proxyPort: 4444,
         proxyRefreshTime: 0
     };
-    var restClient = new KafkaRestClient(configs.proxyHost, configs.proxyPort, configs.proxyRefreshTime);
+    var restClient = new KafkaRestClient({
+      proxyHost: configs.proxyHost,
+      proxyPort: configs.proxyPort,
+      refreshTime: configs.proxyRefreshTime,
+      maxRetries: 0
+    });
     assert.equal(Object.keys(restClient.cachedTopicToUrlMapping).length, 8);
     assert.equal(restClient.cachedTopicToUrlMapping.testTopic0, 'localhost:1111');
     assert.equal(restClient.cachedTopicToUrlMapping.testTopic1, 'localhost:1111');
@@ -61,7 +66,12 @@ test('KafkaRestClient handle failed post', function testKafkaRestClientHanldeFai
         proxyRefreshTime: 0
     };
     var timeStamp = Date.now() / 1000.0;
-    var restClient = new KafkaRestClient(configs.proxyHost, configs.proxyPort, configs.proxyRefreshTime);
+    var restClient = new KafkaRestClient({
+      proxyHost: configs.proxyHost,
+      proxyPort: configs.proxyPort,
+      refreshTime: configs.proxyRefreshTime,
+      maxRetries: 0
+    });
 
     function getProduceMessage(topic, message, ts, type) {
         var produceMessage = {};
@@ -82,4 +92,44 @@ test('KafkaRestClient handle failed post', function testKafkaRestClientHanldeFai
     });
     restClient.close();
     assert.end();
+});
+
+test('KafkaRestClient handle failed post with retries', function testKafkaRestClientHanldeFailedPostCall(assert) {
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: 1111,
+        proxyRefreshTime: 0
+    };
+    var timeStamp = Date.now() / 1000.0;
+    var restClient = new KafkaRestClient({
+      proxyHost: configs.proxyHost,
+      proxyPort: configs.proxyPort,
+      refreshTime: configs.proxyRefreshTime,
+      maxRetries: 1
+    });
+
+    function getProduceMessage(topic, message, ts, type) {
+        var produceMessage = {};
+        produceMessage.topic = topic;
+        produceMessage.message = message;
+        produceMessage.timeStamp = ts;
+        produceMessage.type = type;
+        return produceMessage;
+    }
+
+    restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
+            function assertHttpErrorReason(err) {
+                assert.equal(err.reason, 'connect ECONNREFUSED');
+            });
+
+    restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
+            function assertErrorThrows(err) {
+                assert.throws(err);
+            });
+    /* eslint-disable no-undef,block-scoped-var */
+    setTimeout(function stopAll() {
+        restClient.close();
+        assert.end();
+    }, 8000);
+    /* eslint-enable no-undef,block-scoped-var */
 });
