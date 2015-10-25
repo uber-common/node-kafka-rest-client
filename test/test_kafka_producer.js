@@ -24,6 +24,7 @@ var test = require('tape');
 var KafkaProducer = require('../lib/kafka_producer');
 
 var KafkaRestProxyServer = require('./lib/test_kafka_rest_proxy');
+var MigratorBlacklistServer = require('./lib/test_migrator_blacklist_server');
 
 function onConnect(err) {
     /* eslint-disable no-undef,no-console,block-scoped-var */
@@ -67,6 +68,55 @@ test('Kafka producer could write with produce.', function testKafkaProducer(asse
     /* eslint-disable no-undef,block-scoped-var */
     setTimeout(function stopTest1() {
         server.stop();
+        producer.close();
+    }, 1000);
+    /* eslint-enable no-undef,block-scoped-var */
+    assert.end();
+});
+
+test('Kafka producer could write with produce and blacklist.', function testKafkaProducer(assert) {
+    var restServer = new KafkaRestProxyServer(7777);
+    restServer.start();
+    var blacklistServer = new MigratorBlacklistServer(2222);
+    blacklistServer.start();
+
+    var PORT = 7777;
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: PORT,
+        proxyRefreshTime: 0,
+        blacklistMigrator: true,
+        blacklistMigratorUrl: 'localhost:2222'
+    };
+    var producer = new KafkaProducer(configs);
+    producer.connect(onConnect);
+
+    assert.equal(producer.restClient.enable, false);
+    producer.produce('testTopic0', 'Important message', onSuccessResponse);
+    producer.logLine('testTopic1', 'Important message', onBlacklistedError);
+    producer.logLine('testTopic10', 'Important message', onTopicNotFoundError);
+
+    function onSuccessResponse(err, res) {
+        assert.equal(producer.restClient.enable, true);
+        assert.equal(err, null);
+        assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
+    }
+
+    function onBlacklistedError(err, res) {
+        assert.equal(producer.restClient.enable, true);
+        assert.throws(err, null);
+        assert.equal(res, 'Topic is not blacklisted, not produce data to kafka rest proxy.');
+    }
+
+    function onTopicNotFoundError(err, res) {
+        assert.equal(producer.restClient.enable, true);
+        assert.throws(err, new Error('Topics Not Found.'));
+        assert.equal(res, undefined);
+    }
+    /* eslint-disable no-undef,block-scoped-var */
+    setTimeout(function stopTest1() {
+        restServer.stop();
+        blacklistServer.stop();
         producer.close();
     }, 1000);
     /* eslint-enable no-undef,block-scoped-var */
