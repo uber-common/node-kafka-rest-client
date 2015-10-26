@@ -157,10 +157,13 @@ test('Kafka producer refresh.', function testKafkaProducerTopicRefresh(assert) {
     /* eslint-disable no-undef,block-scoped-var */
     setTimeout(function wait1() {
         assert.equal(producer.restClient.topicDiscoveryTimes, 1);
-    }, 1000);
+    }, 500);
     setTimeout(function wait2() {
         assert.equal(producer.restClient.topicDiscoveryTimes, 2);
-    }, 2000);
+    }, 1500);
+    setTimeout(function wait3() {
+        assert.equal(producer.restClient.topicDiscoveryTimes, 3);
+    }, 2500);
     setTimeout(function stopTest2() {
         producer.close();
         server2.stop();

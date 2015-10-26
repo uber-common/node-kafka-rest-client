@@ -37,68 +37,68 @@ test('MigratorBlacklistClient can return ', function testMigratorBlacklistClient
     var server = new MigratorBlacklistServer(2222);
     server.start();
     var migratorBlacklistClient = new MigratorBlacklistClient('localhost:2222');
-    assert.equal(migratorBlacklistClient.alreadyQueriedBlacklistTopics.length, 0);
-    assert.equal(migratorBlacklistClient.alreadyBlacklistTopics.length, 0);
-    assert.true(migratorBlacklistClient.alreadyQueriedBlacklistTopics.indexOf('testTopic0') === -1,
-        'testTopic0 not in alreadyQueriedBlacklistTopics');
-    assert.true(migratorBlacklistClient.alreadyBlacklistTopics.indexOf('testTopic0') === -1,
-        'testTopic0 not in alreadyBlacklistTopics');
+    assert.equal(migratorBlacklistClient.alreadyQueriedTopics.length, 0);
+    assert.equal(migratorBlacklistClient.alreadyBlacklistedTopics.length, 0);
+    assert.true(migratorBlacklistClient.alreadyQueriedTopics.indexOf('testTopic0') === -1,
+        'testTopic0 not in alreadyQueriedTopics');
+    assert.true(migratorBlacklistClient.alreadyBlacklistedTopics.indexOf('testTopic0') === -1,
+        'testTopic0 not in alreadyBlacklistedTopics');
     migratorBlacklistClient.blacklistTopic('testTopic0', function assertDone(isDone) {
         assert.equal(isDone, true);
-        assert.true(migratorBlacklistClient.alreadyQueriedBlacklistTopics.indexOf('testTopic0') > -1,
-            'testTopic0 in alreadyQueriedBlacklistTopics');
-        assert.true(migratorBlacklistClient.alreadyBlacklistTopics.indexOf('testTopic0') > -1,
-            'testTopic0 in alreadyBlacklistTopics');
+        assert.true(migratorBlacklistClient.alreadyQueriedTopics.indexOf('testTopic0') > -1,
+            'testTopic0 in alreadyQueriedTopics');
+        assert.true(migratorBlacklistClient.alreadyBlacklistedTopics.indexOf('testTopic0') > -1,
+            'testTopic0 in alreadyBlacklistedTopics');
         migratorBlacklistClient.blacklistTopic('testTopic0', function assertDoneAgain(isDone2) {
             assert.equal(isDone2, true);
         });
     });
-    assert.true(migratorBlacklistClient.alreadyQueriedBlacklistTopics.indexOf('testTopic1') === -1,
-        'testTopic1 not in alreadyQueriedBlacklistTopics');
-    assert.true(migratorBlacklistClient.alreadyBlacklistTopics.indexOf('testTopic1') === -1,
-        'testTopic1 not in alreadyBlacklistTopics');
+    assert.true(migratorBlacklistClient.alreadyQueriedTopics.indexOf('testTopic1') === -1,
+        'testTopic1 not in alreadyQueriedTopics');
+    assert.true(migratorBlacklistClient.alreadyBlacklistedTopics.indexOf('testTopic1') === -1,
+        'testTopic1 not in alreadyBlacklistedTopics');
     migratorBlacklistClient.blacklistTopic('testTopic1', function assertDone(isDone) {
         assert.equal(isDone, false);
-        assert.true(migratorBlacklistClient.alreadyQueriedBlacklistTopics.indexOf('testTopic1') > -1,
-            'testTopic1 in alreadyQueriedBlacklistTopics');
-        assert.true(migratorBlacklistClient.alreadyBlacklistTopics.indexOf('testTopic1') === -1,
-            'testTopic1 not in alreadyBlacklistTopics');
+        assert.true(migratorBlacklistClient.alreadyQueriedTopics.indexOf('testTopic1') > -1,
+            'testTopic1 in alreadyQueriedTopics');
+        assert.true(migratorBlacklistClient.alreadyBlacklistedTopics.indexOf('testTopic1') === -1,
+            'testTopic1 not in alreadyBlacklistedTopics');
         migratorBlacklistClient.blacklistTopic('testTopic1', function assertDoneAgain(isDone2) {
             assert.equal(isDone2, false);
         });
     });
-    assert.true(migratorBlacklistClient.alreadyQueriedBlacklistTopics.indexOf('testTopic2') === -1,
-        'testTopic2 not in alreadyQueriedBlacklistTopics');
-    assert.true(migratorBlacklistClient.alreadyBlacklistTopics.indexOf('testTopic2') === -1,
-        'testTopic2 not in alreadyBlacklistTopics');
+    assert.true(migratorBlacklistClient.alreadyQueriedTopics.indexOf('testTopic2') === -1,
+        'testTopic2 not in alreadyQueriedTopics');
+    assert.true(migratorBlacklistClient.alreadyBlacklistedTopics.indexOf('testTopic2') === -1,
+        'testTopic2 not in alreadyBlacklistedTopics');
     migratorBlacklistClient.blacklistTopic('testTopic2', function assertDone(isDone) {
         assert.equal(isDone, true);
-        assert.true(migratorBlacklistClient.alreadyQueriedBlacklistTopics.indexOf('testTopic2') > -1,
-            'testTopic2 in alreadyQueriedBlacklistTopics');
-        assert.true(migratorBlacklistClient.alreadyBlacklistTopics.indexOf('testTopic2') > -1,
-            'testTopic2 in alreadyBlacklistTopics');
+        assert.true(migratorBlacklistClient.alreadyQueriedTopics.indexOf('testTopic2') > -1,
+            'testTopic2 in alreadyQueriedTopics');
+        assert.true(migratorBlacklistClient.alreadyBlacklistedTopics.indexOf('testTopic2') > -1,
+            'testTopic2 in alreadyBlacklistedTopics');
         migratorBlacklistClient.blacklistTopic('testTopic2', function assertDoneAgain(isDone2) {
             assert.equal(isDone2, true);
         });
     });
-    assert.true(migratorBlacklistClient.alreadyQueriedBlacklistTopics.indexOf('testTopic3') === -1,
-        'testTopic3 not in alreadyQueriedBlacklistTopics');
-    assert.true(migratorBlacklistClient.alreadyBlacklistTopics.indexOf('testTopic3') === -1,
-        'testTopic3 not in alreadyBlacklistTopics');
+    assert.true(migratorBlacklistClient.alreadyQueriedTopics.indexOf('testTopic3') === -1,
+        'testTopic3 not in alreadyQueriedTopics');
+    assert.true(migratorBlacklistClient.alreadyBlacklistedTopics.indexOf('testTopic3') === -1,
+        'testTopic3 not in alreadyBlacklistedTopics');
     migratorBlacklistClient.blacklistTopic('testTopic3', function assertDone(isDone) {
         assert.equal(isDone, false);
-        assert.true(migratorBlacklistClient.alreadyQueriedBlacklistTopics.indexOf('testTopic3') > -1,
-            'testTopic3 in alreadyQueriedBlacklistTopics');
-        assert.true(migratorBlacklistClient.alreadyBlacklistTopics.indexOf('testTopic3') === -1,
-            'testTopic3 not in alreadyBlacklistTopics');
+        assert.true(migratorBlacklistClient.alreadyQueriedTopics.indexOf('testTopic3') > -1,
+            'testTopic3 in alreadyQueriedTopics');
+        assert.true(migratorBlacklistClient.alreadyBlacklistedTopics.indexOf('testTopic3') === -1,
+            'testTopic3 not in alreadyBlacklistedTopics');
         migratorBlacklistClient.blacklistTopic('testTopic3', function assertDoneAgain(isDone2) {
             assert.equal(isDone2, false);
         });
     });
     /* eslint-disable no-undef,block-scoped-var */
     setTimeout(function stopTest1() {
-        assert.equal(migratorBlacklistClient.alreadyQueriedBlacklistTopics.length, 4);
-        assert.equal(migratorBlacklistClient.alreadyBlacklistTopics.length, 2);
+        assert.equal(migratorBlacklistClient.alreadyQueriedTopics.length, 4);
+        assert.equal(migratorBlacklistClient.alreadyBlacklistedTopics.length, 2);
         migratorBlacklistClient.close();
         server.close();
         assert.end();

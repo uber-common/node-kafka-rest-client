@@ -42,6 +42,7 @@
     "jshint-pre-commit": "jshint --verbose $(git diff --cached --name-only | grep '\\.js$')",
     "cover": "istanbul cover test/index.js",
     "check-cover": "istanbul check-coverage",
+    "report": "istanbul report cobertura",
     "view-cover": "opn ./coverage/*/index.html"
   },
   "engine": {
