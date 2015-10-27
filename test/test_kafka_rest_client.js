@@ -23,6 +23,8 @@
 var rewire = require('rewire');
 var test = require('tape');
 var KafkaRestClient = rewire('../lib/kafka_rest_client');
+var MigratorBlacklistServer = require('./lib/test_migrator_blacklist_server');
+var MigratorBlacklistClient = require('../lib/migrator_blacklist_client');
 
 KafkaRestClient.__set__({
     'KafkaRestClient.prototype.getTopicRequestBody': function getTopicRequestBodyMock(proxyHost, proxyPort, callback) {
@@ -40,7 +42,12 @@ test('KafkaRestClient can discover topics', function testKafkaRestClientTopicDis
         proxyPort: 4444,
         proxyRefreshTime: 0
     };
-    var restClient = new KafkaRestClient(configs.proxyHost, configs.proxyPort, configs.proxyRefreshTime);
+    var restClient = new KafkaRestClient({
+      proxyHost: configs.proxyHost,
+      proxyPort: configs.proxyPort,
+      refreshTime: configs.proxyRefreshTime,
+      maxRetries: 0
+    });
     assert.equal(Object.keys(restClient.cachedTopicToUrlMapping).length, 8);
     assert.equal(restClient.cachedTopicToUrlMapping.testTopic0, 'localhost:1111');
     assert.equal(restClient.cachedTopicToUrlMapping.testTopic1, 'localhost:1111');
@@ -61,7 +68,12 @@ test('KafkaRestClient handle failed post', function testKafkaRestClientHanldeFai
         proxyRefreshTime: 0
     };
     var timeStamp = Date.now() / 1000.0;
-    var restClient = new KafkaRestClient(configs.proxyHost, configs.proxyPort, configs.proxyRefreshTime);
+    var restClient = new KafkaRestClient({
+      proxyHost: configs.proxyHost,
+      proxyPort: configs.proxyPort,
+      refreshTime: configs.proxyRefreshTime,
+      maxRetries: 0
+    });
 
     function getProduceMessage(topic, message, ts, type) {
         var produceMessage = {};
@@ -82,4 +94,97 @@ test('KafkaRestClient handle failed post', function testKafkaRestClientHanldeFai
     });
     restClient.close();
     assert.end();
+});
+
+test('KafkaRestClient handle failed post with retries', function testKafkaRestClientHanldeFailedPostCall(assert) {
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: 1111,
+        proxyRefreshTime: 0
+    };
+    var timeStamp = Date.now() / 1000.0;
+    var restClient = new KafkaRestClient({
+        proxyHost: configs.proxyHost,
+        proxyPort: configs.proxyPort,
+        refreshTime: configs.proxyRefreshTime,
+        maxRetries: 1
+    });
+
+    function getProduceMessage(topic, message, ts, type) {
+        var produceMessage = {};
+        produceMessage.topic = topic;
+        produceMessage.message = message;
+        produceMessage.timeStamp = ts;
+        produceMessage.type = type;
+        return produceMessage;
+    }
+
+    restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
+        function assertHttpErrorReason(err) {
+            assert.equal(err.reason, 'connect ECONNREFUSED');
+        });
+
+    restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
+        function assertErrorThrows(err) {
+            assert.throws(err);
+        });
+    /* eslint-disable no-undef,block-scoped-var */
+    setTimeout(function stopAll() {
+        restClient.close();
+        assert.end();
+    }, 8000);
+    /* eslint-enable no-undef,block-scoped-var */
+});
+
+test('KafkaRestClient handle post with blacklist client', function testKafkaRestClientHanldeFailedPostCall(assert) {
+    var server = new MigratorBlacklistServer(2222);
+    server.start();
+    var migratorBlacklistClient = new MigratorBlacklistClient('localhost:2222');
+
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: 1111,
+        proxyRefreshTime: 0
+    };
+    var timeStamp = Date.now() / 1000.0;
+    var restClient = new KafkaRestClient({
+        proxyHost: configs.proxyHost,
+        proxyPort: configs.proxyPort,
+        refreshTime: configs.proxyRefreshTime,
+        blacklistMigratorHttpClient: migratorBlacklistClient,
+        maxRetries: 1
+    });
+
+    function getProduceMessage(topic, message, ts, type) {
+        var produceMessage = {};
+        produceMessage.topic = topic;
+        produceMessage.message = message;
+        produceMessage.timeStamp = ts;
+        produceMessage.type = type;
+        return produceMessage;
+    }
+
+    restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
+        function assertHttpErrorReason(err) {
+            assert.equal(err.reason, 'connect ECONNREFUSED');
+        });
+
+    restClient.produce(getProduceMessage('testTopic1', 'msg0', timeStamp, 'binary'),
+        function assertErrorThrows(err, resp) {
+            assert.equal(err, null);
+            assert.equal(resp, 'Topic is not blacklisted, not produce data to kafka rest proxy.');
+        });
+
+    restClient.produce(getProduceMessage('testTopic1', 'msg0', timeStamp, 'binary'),
+        function assertErrorThrows(err, resp) {
+            assert.equal(err, null);
+            assert.equal(resp, 'Topic is not blacklisted, not produce data to kafka rest proxy.');
+        });
+    /* eslint-disable no-undef,block-scoped-var */
+    setTimeout(function stopAll() {
+        restClient.close();
+        server.stop();
+        assert.end();
+    }, 8000);
+    /* eslint-enable no-undef,block-scoped-var */
 });
