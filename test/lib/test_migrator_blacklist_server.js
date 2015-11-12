@@ -34,10 +34,10 @@ util.inherits(MigratorBlacklistServer, http.Server);
 
 MigratorBlacklistServer.prototype.handle = function handle(req, res) {
     var pathToResponseCode = {
-        '/topics/testTopic0': 200,
-        '/topics/testTopic1': 400,
-        '/topics/testTopic2': 404,
-        '/topics/testTopic3': 500
+        '/topics/blacklist?topic=testTopic0': 200,
+        '/topics/blacklist?topic=testTopic1': 400,
+        '/topics/blacklist?topic=testTopic2': 404,
+        '/topics/blacklist?topic=testTopic3': 500
     };
 
     var path = req.url;
