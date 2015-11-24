@@ -2,7 +2,7 @@
 
 A rest client for producing JSON and binary messages to kafka.
 
-## Usage
+e
 
 ```js
 var KafkaProducer = require("./lib/kafka_producer");
