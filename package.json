@@ -7,6 +7,7 @@
   ],
   "main": "./lib/kafka_producer.js",
   "dependencies": {
+    "buffers": "^0.1.1",
     "error": "^7.0.1",
     "lb_pool": "^1.2.0"
   },
