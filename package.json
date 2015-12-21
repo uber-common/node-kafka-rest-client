@@ -8,6 +8,7 @@
   "main": "./lib/kafka_producer.js",
   "dependencies": {
     "async": "*",
+    "buffers": "^0.1.1",
     "CBuffer": "0.1.4",
     "error": "^7.0.1",
     "lb_pool": "^1.2.0"
