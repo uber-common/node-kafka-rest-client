@@ -20,7 +20,21 @@
 
 'use strict';
 
-require('./test_kafka_producer.js');
-require('./test_kafka_rest_client.js');
-require('./test_migrator_blacklist_client.js');
-require('./test_message_batch.js');
+var test = require('tape');
+var MessageBatch = require('../lib/message_batch');
+
+var maxBatchSizeBytes = 100000;
+
+test('MessageBatch can batch several strings', function testKafkaRestClientTopicDiscovery(assert) {
+    var messageBatch = new MessageBatch(maxBatchSizeBytes);
+    messageBatch.addMessage('This is a test.');
+    messageBatch.addMessage('Foo');
+    messageBatch.addMessage('Bar');
+    var batchedMessage = messageBatch.getBatchedMessage();
+    var numMessages = batchedMessage.readInt32BE(0);
+
+    assert.equal(messageBatch.numMessages, 3);
+    assert.equal(messageBatch.sizeBytes, 37);
+    assert.equal(numMessages, 3);
+    assert.end();
+});
