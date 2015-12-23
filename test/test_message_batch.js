@@ -22,10 +22,11 @@
 
 var test = require('tape');
 var MessageBatch = require('../lib/message_batch');
+var Buffer = require('buffer').Buffer;
 
 var maxBatchSizeBytes = 100000;
 
-test('MessageBatch can batch several strings', function testKafkaRestClientTopicDiscovery(assert) {
+test('MessageBatch can batch several strings', function testMessageBatchString(assert) {
     var messageBatch = new MessageBatch(maxBatchSizeBytes);
     messageBatch.addMessage('This is a test.');
     messageBatch.addMessage('Foo');
@@ -36,5 +37,25 @@ test('MessageBatch can batch several strings', function testKafkaRestClientTopic
     assert.equal(messageBatch.numMessages, 3);
     assert.equal(messageBatch.sizeBytes, 37);
     assert.equal(numMessages, 3);
+    assert.equal(batchedMessage.toString(undefined, 8, 23), 'This is a test.');
+    assert.equal(batchedMessage.toString(undefined, 27, 30), 'Foo');
+    assert.equal(batchedMessage.toString(undefined, 34, 37), 'Bar');
+    assert.end();
+});
+
+test('MessageBatch can batch several buffers', function testMessageBatchBuffers(assert) {
+    var messageBatch = new MessageBatch(maxBatchSizeBytes);
+    messageBatch.addMessage(new Buffer('This is a test.'));
+    messageBatch.addMessage(new Buffer('Foo'));
+    messageBatch.addMessage(new Buffer('FooBar'));
+    var batchedMessage = messageBatch.getBatchedMessage();
+    var numMessages = batchedMessage.readInt32BE(0);
+
+    assert.equal(messageBatch.numMessages, 3);
+    assert.equal(messageBatch.sizeBytes, 40);
+    assert.equal(numMessages, 3);
+    assert.equal(batchedMessage.toString(undefined, 8, 23), 'This is a test.');
+    assert.equal(batchedMessage.toString(undefined, 27, 30), 'Foo');
+    assert.equal(batchedMessage.toString(undefined, 34, 40), 'FooBar');
     assert.end();
 });
