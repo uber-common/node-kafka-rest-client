@@ -23,3 +23,4 @@
 require('./test_kafka_producer.js');
 require('./test_kafka_rest_client.js');
 require('./test_migrator_blacklist_client.js');
+require('./test_message_batch.js');
