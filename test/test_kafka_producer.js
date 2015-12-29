@@ -69,9 +69,9 @@ test('Kafka producer could write with produce.', function testKafkaProducer(asse
     setTimeout(function stopTest1() {
         server.stop();
         producer.close();
+        assert.end();
     }, 1000);
     /* eslint-enable no-undef,block-scoped-var */
-    assert.end();
 });
 
 test('Kafka producer could write with produce and blacklist.', function testKafkaProducer(assert) {
@@ -118,9 +118,9 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
         restServer.stop();
         blacklistServer.stop();
         producer.close();
+        assert.end();
     }, 1000);
     /* eslint-enable no-undef,block-scoped-var */
-    assert.end();
 });
 
 test('Kafka producer handle unavailable proxy.', function testKafkaProducerHandleUnavailableProxy(assert) {
@@ -167,9 +167,9 @@ test('Kafka producer refresh.', function testKafkaProducerTopicRefresh(assert) {
     setTimeout(function stopTest2() {
         producer.close();
         server2.stop();
+        assert.end();
     }, 3000);
     /* eslint-enable no-undef,block-scoped-var */
-    assert.end();
 });
 
 test('Test get whole msg', function testKafkaProducerGetWholeMsgFunction(assert) {
