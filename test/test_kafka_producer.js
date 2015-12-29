@@ -74,6 +74,45 @@ test('Kafka producer could write with produce.', function testKafkaProducer(asse
     /* eslint-enable no-undef,block-scoped-var */
 });
 
+test('Kafka producer could write with batched produce.', function testKafkaProducer(assert) {
+    var server = new KafkaRestProxyServer(4444);
+    server.start();
+
+    var PORT = 4444;
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: PORT,
+        proxyRefreshTime: 0,
+        batching: true
+    };
+    var producer = new KafkaProducer(configs);
+    producer.connect(onConnect);
+
+    assert.equal(producer.restClient.enable, false);
+    producer.produce('testTopic0', 'Important message', onSuccessResponse);
+    producer.logLine('testTopic1', 'Important message', onSuccessResponse);
+    producer.logLine('testTopic10', 'Important message', onTopicNotFoundError);
+
+    function onSuccessResponse(err, res) {
+        assert.equal(producer.restClient.enable, true);
+        assert.equal(err, null);
+        assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
+    }
+
+    function onTopicNotFoundError(err, res) {
+        assert.equal(producer.restClient.enable, true);
+        assert.throws(err, new Error('Topics Not Found.'));
+        assert.equal(res, undefined);
+    }
+    /* eslint-disable no-undef,block-scoped-var */
+    setTimeout(function stopTest1() {
+        server.stop();
+        producer.close();
+        assert.end();
+    }, 1500);
+    /* eslint-enable no-undef,block-scoped-var */
+});
+
 test('Kafka producer could write with produce and blacklist.', function testKafkaProducer(assert) {
     var restServer = new KafkaRestProxyServer(7777);
     restServer.start();
