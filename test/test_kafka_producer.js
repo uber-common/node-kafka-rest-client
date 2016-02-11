@@ -234,3 +234,47 @@ test('Test get whole msg', function testKafkaProducerGetWholeMsgFunction(assert)
     assert.end();
     producer.close();
 });
+
+test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(assert) {
+    var server = new KafkaRestProxyServer(4444);
+    server.start();
+
+    var PORT = 4444;
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: PORT,
+        proxyRefreshTime: 0,
+        enableAudit: true
+    };
+    var producer = new KafkaProducer(configs);
+    producer.connect(onConnect);
+
+    assert.equal(producer.restClient.enable, false);
+    producer.produce('testTopic0', 'Important message', Date.now() / 1000.0);
+    producer.produce('testTopic1', 'Important message', Date.now() / 1000.0);
+    producer.produce('testTopic1', 'Important message', Date.now() / 1000.0);
+    producer.logLine('testTopic2', 'Important message');
+    producer.logLine('testTopic2', 'Important message');
+    producer.logLine('testTopic2', 'Important message');
+
+    var auditMsg = producer._generateAuditMsg();
+    // console.log(auditMsg);
+    var json = JSON.parse(auditMsg);
+    assert.equal(json.topic_count.testTopic0, 1);
+    assert.equal(json.topic_count.testTopic1, 2);
+    assert.equal(json.topic_count.testTopic2, 3);
+
+    /* eslint-disable no-undef,block-scoped-var */
+    setTimeout(function stopTest1() {
+        server.stop();
+        producer.close();
+        assert.end();
+    }, 1000);
+    /* eslint-enable no-undef,block-scoped-var */
+});
+
+test('Test calc timeBeginInSec', function testKafkaProducerCalcTimeBeginInSec(assert) {
+    var timeBeginInSec = Math.floor((Date.now() / 1000) / 600) * 600;
+    assert.equal(timeBeginInSec % 600, 0);
+    assert.end();
+});
