@@ -26,7 +26,7 @@ KafkaProducer constructor accepts these options:
 
 ##Install
 
-    npm install node-kafka-rest-client
+    npm install kafka-rest-client
 
 ## Running tests
 
