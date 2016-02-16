@@ -14,7 +14,7 @@ var configs = {
 var kafkaRestClient = new KafkaRestClient(kafkaRestClientOptions, callback);
 kafkaRestClient.connect(callback);
 
- kafkaRestClient.produce(topicName, 'Example Kafka Message', callback);
+kafkaRestClient.produce(topicName, 'Example Kafka Message', callback);
 
 ```
 
