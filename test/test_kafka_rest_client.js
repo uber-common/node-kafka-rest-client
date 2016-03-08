@@ -23,9 +23,9 @@
 var rewire = require('rewire');
 var test = require('tape');
 var KafkaRestClient = rewire('../lib/kafka_rest_client');
+var KafkaRestProxyServer = require('./lib/test_kafka_rest_proxy');
 var MigratorBlacklistServer = require('./lib/test_migrator_blacklist_server');
 var MigratorBlacklistClient = require('../lib/migrator_blacklist_client');
-var KafkaRestProxyServer = require('./lib/test_kafka_rest_proxy');
 
 KafkaRestClient.__set__({
     'KafkaRestClient.prototype.getTopicRequestBody': function getTopicRequestBodyMock(proxyHost, proxyPort, callback) {
@@ -47,7 +47,7 @@ test('KafkaRestClient can discover topics', function testKafkaRestClientTopicDis
         proxyHost: configs.proxyHost,
         proxyPort: configs.proxyPort,
         refreshTime: configs.proxyRefreshTime,
-        maxRetries: 0
+        maxRetries: 3
     });
     assert.equal(Object.keys(restClient.cachedTopicToUrlMapping).length, 8);
     assert.equal(restClient.cachedTopicToUrlMapping.testTopic0, 'localhost:1111');

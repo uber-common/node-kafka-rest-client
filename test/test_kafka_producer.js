@@ -63,7 +63,10 @@ test('Kafka producer could write with produce.', function testKafkaProducer(asse
 
     function onTopicNotFoundError(err, res) {
         assert.equal(producer.restClient.enable, true);
-        assert.throws(err, new Error('Topics Not Found.'));
+        assert.throws(function throwError() {
+            if (err)
+                throw new Error('Topics Not Found.');
+        }, Error);
         assert.equal(res, undefined);
     }
     /* eslint-disable no-undef,block-scoped-var */
@@ -102,7 +105,10 @@ test('Kafka producer could write with batched produce.', function testKafkaProdu
 
     function onTopicNotFoundError(err, res) {
         assert.equal(producer.restClient.enable, true);
-        assert.throws(err, new Error('Topics Not Found.'));
+        assert.throws(function throwError() {
+            if (err)
+                throw new Error('Topics Not Found.');
+        }, Error);
         assert.equal(res, undefined);
     }
     /* eslint-disable no-undef,block-scoped-var */
@@ -144,13 +150,16 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
 
     function onBlacklistedError(err, res) {
         assert.equal(producer.restClient.enable, true);
-        assert.throws(err, null);
+        assert.equal(err, null);
         assert.equal(res, 'Topic is not blacklisted, not produce data to kafka rest proxy.');
     }
 
     function onTopicNotFoundError(err, res) {
         assert.equal(producer.restClient.enable, true);
-        assert.throws(err, new Error('Topics Not Found.'));
+        assert.throws(function throwError() {
+            if (err)
+                throw new Error('Topics Not Found.');
+        }, Error);
         assert.equal(res, undefined);
     }
     /* eslint-disable no-undef,block-scoped-var */
@@ -173,7 +182,10 @@ test('Kafka producer handle unavailable proxy.', function testKafkaProducerHandl
     producer.connect(onConnect);
     assert.equal(producer.restClient.enable, false);
     function onClientNotEnalbeError(err, res) {
-        assert.throws(err, new Error('Kafka Rest Client is not enabled yet.'));
+        assert.throws(function throwError() {
+            if (err)
+                throw new Error('Kafka Rest Client is not enabled yet.');
+        }, Error);
         assert.equal(res, undefined);
     }
     producer.logLine('avro650', 'Important message', onClientNotEnalbeError);
