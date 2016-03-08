@@ -44,7 +44,8 @@ test('Kafka producer could write with produce.', function testKafkaProducer(asse
     var configs = {
         proxyHost: 'localhost',
         proxyPort: PORT,
-        proxyRefreshTime: 0
+        proxyRefreshTime: 0,
+        maxRetries: 3
     };
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
