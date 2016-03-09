@@ -90,7 +90,7 @@ test('KafkaRestClient handle failed post', function testKafkaRestClientHanldeFai
             });
 
     restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'), function assertErrorThrows(err) {
-        assert.throws(err, new Error('Topics Not Found.'));
+        assert.equal(err.reason, 'connect ECONNREFUSED');
     });
     restClient.close();
     assert.end();
@@ -126,7 +126,7 @@ test('KafkaRestClient handle failed post with retries', function testKafkaRestCl
 
     restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
         function assertErrorThrows(err) {
-            assert.throws(err);
+            assert.equal(err.reason, 'connect ECONNREFUSED');
         });
     /* eslint-disable no-undef,block-scoped-var */
     setTimeout(function stopAll() {
