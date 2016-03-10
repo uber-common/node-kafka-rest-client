@@ -62,7 +62,11 @@ test('Kafka producer could write with produce.', function testKafkaProducer(asse
 
     function onTopicNotFoundError(err, res) {
         assert.equal(producer.restClient.enable, true);
-        assert.throws(err, new Error('Topics Not Found.'));
+        assert.throws(function throwError() {
+            if (err) {
+                throw new Error('Topics Not Found.');
+            }
+        }, Error);
         assert.equal(res, undefined);
     }
     /* eslint-disable no-undef,block-scoped-var */
@@ -101,7 +105,11 @@ test('Kafka producer could write with batched produce.', function testKafkaProdu
 
     function onTopicNotFoundError(err, res) {
         assert.equal(producer.restClient.enable, true);
-        assert.throws(err, new Error('Topics Not Found.'));
+        assert.throws(function throwError() {
+            if (err) {
+                throw new Error('Topics Not Found.');
+            }
+        }, Error);
         assert.equal(res, undefined);
     }
     /* eslint-disable no-undef,block-scoped-var */
@@ -143,13 +151,17 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
 
     function onBlacklistedError(err, res) {
         assert.equal(producer.restClient.enable, true);
-        assert.throws(err, null);
+        assert.equal(err, null);
         assert.equal(res, 'Topic is not blacklisted, not produce data to kafka rest proxy.');
     }
 
     function onTopicNotFoundError(err, res) {
         assert.equal(producer.restClient.enable, true);
-        assert.throws(err, new Error('Topics Not Found.'));
+        assert.throws(function throwError() {
+            if (err) {
+                throw new Error('Topics Not Found.');
+            }
+        }, Error);
         assert.equal(res, undefined);
     }
     /* eslint-disable no-undef,block-scoped-var */
@@ -172,7 +184,11 @@ test('Kafka producer handle unavailable proxy.', function testKafkaProducerHandl
     producer.connect(onConnect);
     assert.equal(producer.restClient.enable, false);
     function onClientNotEnalbeError(err, res) {
-        assert.throws(err, new Error('Kafka Rest Client is not enabled yet.'));
+        assert.throws(function throwError() {
+            if (err) {
+                throw new Error('Kafka Rest Client is not enabled yet.');
+            }
+        }, Error);
         assert.equal(res, undefined);
     }
     producer.logLine('avro650', 'Important message', onClientNotEnalbeError);
@@ -233,4 +249,48 @@ test('Test get whole msg', function testKafkaProducerGetWholeMsgFunction(assert)
     assert.equal(wholeMsg.ts, testTimeStamp);
     assert.end();
     producer.close();
+});
+
+test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(assert) {
+    var server = new KafkaRestProxyServer(4444);
+    server.start();
+
+    var PORT = 4444;
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: PORT,
+        proxyRefreshTime: 0,
+        enableAudit: true
+    };
+    var producer = new KafkaProducer(configs);
+    producer.connect(onConnect);
+
+    assert.equal(producer.restClient.enable, false);
+    producer.produce('testTopic0', 'Important message', Date.now() / 1000.0);
+    producer.produce('testTopic1', 'Important message', Date.now() / 1000.0);
+    producer.produce('testTopic1', 'Important message', Date.now() / 1000.0);
+    producer.logLine('testTopic2', 'Important message');
+    producer.logLine('testTopic2', 'Important message');
+    producer.logLine('testTopic2', 'Important message');
+
+    var auditMsg = producer._generateAuditMsg();
+    // console.log(auditMsg);
+    var json = JSON.parse(auditMsg);
+    assert.equal(json.topic_count.testTopic0, 1);
+    assert.equal(json.topic_count.testTopic1, 2);
+    assert.equal(json.topic_count.testTopic2, 3);
+
+    /* eslint-disable no-undef,block-scoped-var */
+    setTimeout(function stopTest1() {
+        server.stop();
+        producer.close();
+        assert.end();
+    }, 1000);
+    /* eslint-enable no-undef,block-scoped-var */
+});
+
+test('Test calc timeBeginInSec', function testKafkaProducerCalcTimeBeginInSec(assert) {
+    var timeBeginInSec = Math.floor((Date.now() / 1000) / 600) * 600;
+    assert.equal(timeBeginInSec % 600, 0);
+    assert.end();
 });
