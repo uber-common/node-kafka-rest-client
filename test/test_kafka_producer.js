@@ -275,10 +275,15 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
 
     var auditMsg = producer._generateAuditMsg();
     // console.log(auditMsg);
+
+    /* eslint-disable camelcase */
+    /* jshint camelcase: false */
     var json = JSON.parse(auditMsg);
     assert.equal(json.topic_count.testTopic0, 1);
     assert.equal(json.topic_count.testTopic1, 2);
     assert.equal(json.topic_count.testTopic2, 3);
+    /* jshint camelcase: true */
+    /* eslint-enable camelcase */
 
     /* eslint-disable no-undef,block-scoped-var */
     setTimeout(function stopTest1() {
