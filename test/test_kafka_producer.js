@@ -69,6 +69,7 @@ test('Kafka producer could write with produce.', function testKafkaProducer(asse
         }, Error);
         assert.equal(res, undefined);
     }
+
     /* eslint-disable no-undef,block-scoped-var */
     setTimeout(function stopTest1() {
         server.stop();
@@ -111,6 +112,7 @@ test('Kafka producer could write with batched produce.', function testKafkaProdu
         }, Error);
         assert.equal(res, undefined);
     }
+
     /* eslint-disable no-undef,block-scoped-var */
     setTimeout(function stopTest1() {
         server.stop();
@@ -162,6 +164,7 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
         }, Error);
         assert.equal(res, undefined);
     }
+
     /* eslint-disable no-undef,block-scoped-var */
     setTimeout(function stopTest1() {
         restServer.stop();
@@ -188,6 +191,7 @@ test('Kafka producer handle unavailable proxy.', function testKafkaProducerHandl
         }, Error);
         assert.equal(res, undefined);
     }
+
     producer.logLine('avro650', 'Important message', onClientNotEnalbeError);
     producer.close();
     assert.end();
