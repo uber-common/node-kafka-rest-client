@@ -87,9 +87,9 @@ test('KafkaRestClient handle failed post', function testKafkaRestClientHanldeFai
     }
 
     restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
-        function assertHttpErrorReason(err) {
-            assert.equal(err.reason, 'connect ECONNREFUSED');
-        });
+            function assertHttpErrorReason(err) {
+                assert.equal(err.reason, 'connect ECONNREFUSED');
+            });
 
     restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'), function assertErrorThrows(err) {
         assert.equal(err.reason, 'connect ECONNREFUSED');
