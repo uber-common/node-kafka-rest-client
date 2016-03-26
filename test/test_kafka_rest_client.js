@@ -22,6 +22,7 @@
 
 var rewire = require('rewire');
 var test = require('tape');
+var KafkaRestProxyServer = require('./lib/test_kafka_rest_proxy');
 var KafkaRestClient = rewire('../lib/kafka_rest_client');
 var MigratorBlacklistServer = require('./lib/test_migrator_blacklist_server');
 var MigratorBlacklistClient = require('../lib/migrator_blacklist_client');
@@ -43,10 +44,10 @@ test('KafkaRestClient can discover topics', function testKafkaRestClientTopicDis
         proxyRefreshTime: 0
     };
     var restClient = new KafkaRestClient({
-      proxyHost: configs.proxyHost,
-      proxyPort: configs.proxyPort,
-      refreshTime: configs.proxyRefreshTime,
-      maxRetries: 0
+        proxyHost: configs.proxyHost,
+        proxyPort: configs.proxyPort,
+        refreshTime: configs.proxyRefreshTime,
+        maxRetries: 0
     });
     assert.equal(Object.keys(restClient.cachedTopicToUrlMapping).length, 8);
     assert.equal(restClient.cachedTopicToUrlMapping.testTopic0, 'localhost:1111');
@@ -69,10 +70,10 @@ test('KafkaRestClient handle failed post', function testKafkaRestClientHanldeFai
     };
     var timeStamp = Date.now() / 1000.0;
     var restClient = new KafkaRestClient({
-      proxyHost: configs.proxyHost,
-      proxyPort: configs.proxyPort,
-      refreshTime: configs.proxyRefreshTime,
-      maxRetries: 0
+        proxyHost: configs.proxyHost,
+        proxyPort: configs.proxyPort,
+        refreshTime: configs.proxyRefreshTime,
+        maxRetries: 0
     });
 
     function getProduceMessage(topic, message, ts, type) {
@@ -85,9 +86,9 @@ test('KafkaRestClient handle failed post', function testKafkaRestClientHanldeFai
     }
 
     restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
-            function assertHttpErrorReason(err) {
-                assert.equal(err.reason, 'connect ECONNREFUSED');
-            });
+        function assertHttpErrorReason(err) {
+            assert.equal(err.reason, 'connect ECONNREFUSED');
+        });
 
     restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'), function assertErrorThrows(err) {
         assert.equal(err.reason, 'connect ECONNREFUSED');
@@ -131,6 +132,58 @@ test('KafkaRestClient handle failed post with retries', function testKafkaRestCl
     /* eslint-disable no-undef,block-scoped-var */
     setTimeout(function stopAll() {
         restClient.close();
+        assert.end();
+    }, 8000);
+    /* eslint-enable no-undef,block-scoped-var */
+});
+
+test('KafkaRestClient handle not cached non-heatpipe topics', function testKafkaRestClientHanldeFailedPostCall(assert) {
+
+    var server = new KafkaRestProxyServer(5391);
+    server.start();
+
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: 1111,
+        proxyRefreshTime: 0,
+        defaultProxyPort: 5391
+    };
+    var timeStamp = Date.now() / 1000.0;
+    var restClient = new KafkaRestClient({
+        proxyHost: configs.proxyHost,
+        proxyPort: configs.proxyPort,
+        refreshTime: configs.proxyRefreshTime,
+        maxRetries: 1,
+        defaultProxyPort: configs.defaultProxyPort
+    });
+
+    function getProduceMessage(topic, message, ts, type) {
+        var produceMessage = {};
+        produceMessage.topic = topic;
+        produceMessage.message = message;
+        produceMessage.timeStamp = ts;
+        produceMessage.type = type;
+        return produceMessage;
+    }
+
+    restClient.produce(getProduceMessage('testTopic-not-in-map', 'msg0', timeStamp, 'binary'),
+        function assertHttpErrorReason(err) {
+            assert.equal(err, null);
+        });
+
+    restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
+        function assertHttpErrorReason(err) {
+            assert.equal(err.reason, 'connect ECONNREFUSED');
+        });
+
+    restClient.produce(getProduceMessage('hp-testTopic-not-in-map', 'msg0', timeStamp, 'binary'),
+        function assertErrorThrows(err) {
+            assert.equal(err.message, 'Topics Not Found.');
+        });
+    /* eslint-disable no-undef,block-scoped-var */
+    setTimeout(function stopAll() {
+        restClient.close();
+        server.stop();
         assert.end();
     }, 8000);
     /* eslint-enable no-undef,block-scoped-var */
