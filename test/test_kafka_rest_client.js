@@ -31,7 +31,8 @@ KafkaRestClient.__set__({
     'KafkaRestClient.prototype.getTopicRequestBody': function getTopicRequestBodyMock(proxyHost, proxyPort, callback) {
         var messages = {
             'localhost:1111': ['testTopic0', 'testTopic1', 'testTopic2', 'testTopic3'],
-            'localhost:2222': ['testTopic4', 'testTopic5', 'testTopic6', 'testTopic7']
+            'localhost:2222': ['testTopic4', 'testTopic5', 'testTopic6', 'testTopic7'],
+            'localhost:15380': ['LOGGING_TOPICS']
         };
         callback(null, JSON.stringify(messages));
     }
@@ -49,7 +50,7 @@ test('KafkaRestClient can discover topics', function testKafkaRestClientTopicDis
         refreshTime: configs.proxyRefreshTime,
         maxRetries: 0
     });
-    assert.equal(Object.keys(restClient.cachedTopicToUrlMapping).length, 8);
+    assert.equal(Object.keys(restClient.cachedTopicToUrlMapping).length, 9);
     assert.equal(restClient.cachedTopicToUrlMapping.testTopic0, 'localhost:1111');
     assert.equal(restClient.cachedTopicToUrlMapping.testTopic1, 'localhost:1111');
     assert.equal(restClient.cachedTopicToUrlMapping.testTopic2, 'localhost:1111');
@@ -139,22 +140,19 @@ test('KafkaRestClient handle failed post with retries', function testKafkaRestCl
 
 test('KafkaRestClient handle not cached non-heatpipe topics', function testKafkaRestClientHanldeFailedPostCall(assert) {
 
-    var server = new KafkaRestProxyServer(5391);
-    server.start();
+    var server = new KafkaRestProxyServer(15380);
 
     var configs = {
         proxyHost: 'localhost',
         proxyPort: 1111,
-        proxyRefreshTime: 0,
-        defaultProxyPort: 5391
+        proxyRefreshTime: 0
     };
     var timeStamp = Date.now() / 1000.0;
     var restClient = new KafkaRestClient({
         proxyHost: configs.proxyHost,
         proxyPort: configs.proxyPort,
         refreshTime: configs.proxyRefreshTime,
-        maxRetries: 1,
-        defaultProxyPort: configs.defaultProxyPort
+        maxRetries: 1
     });
 
     function getProduceMessage(topic, message, ts, type) {
@@ -168,7 +166,12 @@ test('KafkaRestClient handle not cached non-heatpipe topics', function testKafka
 
     restClient.produce(getProduceMessage('testTopic-not-in-map', 'msg0', timeStamp, 'binary'),
         function assertHttpErrorReason(err) {
-            assert.equal(err, null);
+            assert.equal(err.reason, 'connect ECONNREFUSED');
+            server.start();
+            restClient.produce(getProduceMessage('testTopic-not-in-map', 'msg0', timeStamp, 'binary'),
+                function assertHttpErrorReason2(err2) {
+                    assert.equal(err2, null);
+                });
         });
 
     restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
