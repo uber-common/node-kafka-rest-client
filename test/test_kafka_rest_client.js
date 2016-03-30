@@ -227,15 +227,10 @@ test('KafkaRestClient handle post with blacklist client', function testKafkaRest
 
     restClient.produce(getProduceMessage('testTopic1', 'msg0', timeStamp, 'binary'),
         function assertErrorThrows(err, resp) {
-            assert.equal(err, null);
-            assert.equal(resp, 'Topic is not blacklisted, not produce data to kafka rest proxy.');
+            assert.equal(err.reason, 'connect ECONNREFUSED');
+            assert.equal(resp, undefined);
         });
 
-    restClient.produce(getProduceMessage('testTopic1', 'msg0', timeStamp, 'binary'),
-        function assertErrorThrows(err, resp) {
-            assert.equal(err, null);
-            assert.equal(resp, 'Topic is not blacklisted, not produce data to kafka rest proxy.');
-        });
     /* eslint-disable no-undef,block-scoped-var */
     setTimeout(function stopAll() {
         restClient.close();
