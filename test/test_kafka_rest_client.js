@@ -32,7 +32,7 @@ KafkaRestClient.__set__({
         var messages = {
             'localhost:1111': ['testTopic0', 'testTopic1', 'testTopic2', 'testTopic3'],
             'localhost:2222': ['testTopic4', 'testTopic5', 'testTopic6', 'testTopic7'],
-            'localhost:15380': ['LOGGING_TOPICS']
+            'localhost:15380': ['LOGGING TOPICS']
         };
         callback(null, JSON.stringify(messages));
     }
