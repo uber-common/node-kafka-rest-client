@@ -1,7 +1,7 @@
 {
   "name": "kafka-rest-client",
   "description": "Kafka rest client to produce json/ binary messages",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "contributors": [
     "Xiang Fu <xiangfu@uber.com>"
   ],
