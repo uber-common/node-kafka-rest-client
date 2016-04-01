@@ -139,7 +139,6 @@ test('KafkaRestClient handle failed post with retries', function testKafkaRestCl
 });
 
 test('KafkaRestClient handle not cached non-heatpipe topics', function testKafkaRestClientHanldeFailedPostCall(assert) {
-
     var server = new KafkaRestProxyServer(15380);
 
     var configs = {
