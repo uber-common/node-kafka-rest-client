@@ -11,26 +11,27 @@
     "lb_pool": "^1.2.0"
   },
   "devDependencies": {
+    "async": "^1.5.2",
     "buffertools": "*",
     "chai": "*",
+    "glob": "*",
     "istanbul": "0.1.46",
-    "jscoverage": "*",
     "itape": "^1.5.0",
+    "jscoverage": "*",
     "jscs": "^1.7.3",
     "jshint": "^2.5.2",
     "mocha": "*",
     "mockery": "*",
     "nodemock": "*",
     "opn": "^0.1.2",
+    "pre-commit": "0.0.9",
     "proxyquire": "*",
     "rewire": "*",
     "should": "*",
     "sinon": "*",
     "tape": "^4.2.0",
-    "glob": "*",
     "uber-licence": "^1.2.0",
-    "uber-standard": "^3.6.4",
-    "pre-commit": "0.0.9"
+    "uber-standard": "^3.6.4"
   },
   "license": "MIT",
   "scripts": {
