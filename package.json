@@ -8,7 +8,8 @@
   "main": "./lib/kafka_producer.js",
   "dependencies": {
     "error": "^7.0.1",
-    "lb_pool": "^1.2.0"
+    "lb_pool": "^1.2.0",
+    "uuid": "^2.0.1"
   },
   "devDependencies": {
     "buffertools": "*",
