@@ -161,9 +161,6 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
             function test1(next) {
                 producer.produce('testTopic0', 'Important message', generateSuccessCheck(next));
             },
-            function test2(next) {
-                producer.logLine('testTopic1', 'Important message', generateBlacklistedErrorCheck(next));
-            },
             function test3(next) {
                 producer.logLine('testTopic10', 'Important message', generateErrorCheck(next));
             }
@@ -180,14 +177,6 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
             assert.equal(producer.restClient.enable, true);
             assert.equal(err, null);
             assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
-            next();
-        };
-    }
-    function generateBlacklistedErrorCheck(next) {
-        return function onBlacklistedError(err, res) {
-            assert.equal(producer.restClient.enable, true);
-            assert.equal(err, null);
-            assert.equal(res, 'Topic is not blacklisted, not produce data to kafka rest proxy.');
             next();
         };
     }
