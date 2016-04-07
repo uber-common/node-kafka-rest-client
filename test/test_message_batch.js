@@ -28,9 +28,9 @@ var maxBatchSizeBytes = 100000;
 
 test('MessageBatch can batch several strings', function testMessageBatchString(assert) { // eslint-disable-line
     var messageBatch = new MessageBatch(maxBatchSizeBytes);
-    messageBatch.addMessage('This is a test.');
-    messageBatch.addMessage('Foo');
-    messageBatch.addMessage('Bar');
+    messageBatch.addMessage('1', 'This is a test.');
+    messageBatch.addMessage('2', 'Foo');
+    messageBatch.addMessage('3', 'Bar');
     var batchedMessage = messageBatch.getBatchedMessage();
     var numMessages = batchedMessage.readInt32BE(0);
     var firstMessageSize = batchedMessage.readInt32BE(4);
@@ -48,9 +48,9 @@ test('MessageBatch can batch several strings', function testMessageBatchString(a
     assert.equal(batchedMessage.toString(undefined, 34, 37), 'Bar');
 
     messageBatch.resetBatchedMessage();
-    messageBatch.addMessage('This is a test.');
-    messageBatch.addMessage('Foo');
-    messageBatch.addMessage('Bar');
+    messageBatch.addMessage('1', 'This is a test.');
+    messageBatch.addMessage('2', 'Foo');
+    messageBatch.addMessage('3', 'Bar');
     batchedMessage = messageBatch.getBatchedMessage();
     numMessages = batchedMessage.readInt32BE(0);
 
@@ -68,9 +68,9 @@ test('MessageBatch can batch several strings', function testMessageBatchString(a
 
 test('MessageBatch can batch several buffers', function testMessageBatchBuffers(assert) { // eslint-disable-line
     var messageBatch = new MessageBatch(maxBatchSizeBytes);
-    messageBatch.addMessage(new Buffer('This is a test.'));
-    messageBatch.addMessage(new Buffer('Foo'));
-    messageBatch.addMessage(new Buffer('FooBar'));
+    messageBatch.addMessage('fake', new Buffer('This is a test.'));
+    messageBatch.addMessage('fake', new Buffer('Foo'));
+    messageBatch.addMessage('fake', new Buffer('FooBar'));
     var batchedMessage = messageBatch.getBatchedMessage();
     var numMessages = batchedMessage.readInt32BE(0);
     var firstMessageSize = batchedMessage.readInt32BE(4);
@@ -88,9 +88,9 @@ test('MessageBatch can batch several buffers', function testMessageBatchBuffers(
     assert.equal(batchedMessage.toString(undefined, 34, 40), 'FooBar');
 
     messageBatch.resetBatchedMessage();
-    messageBatch.addMessage(new Buffer('This is a test.'));
-    messageBatch.addMessage(new Buffer('Foo'));
-    messageBatch.addMessage(new Buffer('FooBar'));
+    messageBatch.addMessage('fake', new Buffer('This is a test.'));
+    messageBatch.addMessage('fake', new Buffer('Foo'));
+    messageBatch.addMessage('fake', new Buffer('FooBar'));
     batchedMessage = messageBatch.getBatchedMessage();
     numMessages = batchedMessage.readInt32BE(0);
 
