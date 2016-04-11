@@ -21,20 +21,11 @@
 'use strict';
 
 var test = require('tape');
+var async = require('async');
 var KafkaProducer = require('../lib/kafka_producer');
 
 var KafkaRestProxyServer = require('./lib/test_kafka_rest_proxy');
 var MigratorBlacklistServer = require('./lib/test_migrator_blacklist_server');
-
-function onConnect(err) {
-    /* eslint-disable no-undef,no-console,block-scoped-var */
-    if (!err) {
-        console.log('KafkaRestClient connected to kafka');
-    } else {
-        console.log('KafkaRestClient could not connect to kafka');
-    }
-    /* eslint-enable no-undef,no-console,block-scoped-var */
-}
 
 test('Kafka producer could write with produce.', function testKafkaProducer(assert) {
     var server = new KafkaRestProxyServer(4444);
@@ -44,40 +35,51 @@ test('Kafka producer could write with produce.', function testKafkaProducer(asse
     var configs = {
         proxyHost: 'localhost',
         proxyPort: PORT,
-        proxyRefreshTime: 0,
-        maxRetries: 3
+        proxyRefreshTime: 0
     };
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
 
-    assert.equal(producer.restClient.enable, false);
-    producer.produce('testTopic0', 'Important message', onSuccessResponse);
-    producer.logLine('testTopic1', 'Important message', onSuccessResponse);
-    producer.logLine('testTopic10', 'Important message', onTopicNotFoundError);
-
-    function onSuccessResponse(err, res) {
+    function onConnect() {
         assert.equal(producer.restClient.enable, true);
-        assert.equal(err, null);
-        assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
-    }
-
-    function onTopicNotFoundError(err, res) {
-        assert.equal(producer.restClient.enable, true);
-        assert.throws(function throwError() {
-            if (err) {
-                throw new Error('Topics Not Found.');
+        async.parallel([
+            function test1(next) {
+                producer.produce('testTopic0', 'Important message', generateSuccessCheck(next));
+            },
+            function test2(next) {
+                producer.logLine('testTopic1', 'Important message', generateSuccessCheck(next));
+            },
+            function test3(next) {
+                producer.logLine('testTopic10', 'Important message', generateErrorCheck(next));
             }
-        }, Error);
-        assert.equal(res, undefined);
+        ], function end() {
+            server.stop();
+            producer.close();
+            assert.end();
+        });
     }
 
-    /* eslint-disable no-undef,block-scoped-var */
-    setTimeout(function stopTest1() {
-        server.stop();
-        producer.close();
-        assert.end();
-    }, 1000);
-    /* eslint-enable no-undef,block-scoped-var */
+    function generateSuccessCheck(next) {
+        return function onSuccessResponse(err, res) {
+            assert.equal(producer.restClient.enable, true);
+            assert.equal(err, null);
+            assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
+            next();
+        };
+    }
+
+    function generateErrorCheck(next) {
+        return function onTopicNotFoundError(err, res) {
+            assert.equal(producer.restClient.enable, true);
+            assert.throws(function throwError() {
+                if (err) {
+                    throw new Error('Topics Not Found.');
+                }
+            }, Error);
+            assert.equal(res, undefined);
+            next();
+        };
+    }
 });
 
 test('Kafka producer could write with batched produce.', function testKafkaProducer(assert) {
@@ -94,42 +96,55 @@ test('Kafka producer could write with batched produce.', function testKafkaProdu
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
 
-    assert.equal(producer.restClient.enable, false);
-    producer.produce('testTopic0', 'Important message', onSuccessResponse);
-    producer.logLine('testTopic1', 'Important message', onSuccessResponse);
-    producer.logLine('testTopic10', 'Important message', onTopicNotFoundError);
-
-    function onSuccessResponse(err, res) {
+    function onConnect() {
         assert.equal(producer.restClient.enable, true);
-        assert.equal(err, null);
-        assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
+        async.parallel([
+            function test1(next) {
+                producer.produce('testTopic0', 'Important message', generateSuccessCheck(next));
+            },
+            function test2(next) {
+                producer.logLine('testTopic1', 'Important message', generateSuccessCheck(next));
+            },
+            function test3(next) {
+                producer.logLine('testTopic10', 'Important message', generateErrorCheck(next));
+            }
+        ], function end() {
+            server.stop();
+            producer.close();
+            assert.end();
+        });
     }
 
-    function onTopicNotFoundError(err, res) {
-        assert.equal(producer.restClient.enable, true);
-        assert.throws(function throwError() {
-            if (err)
-                throw new Error('Topics Not Found.');
-        }, Error);
-        assert.equal(res, undefined);
+    function generateSuccessCheck(next) {
+        return function onSuccessResponse(err, res) {
+            assert.equal(producer.restClient.enable, true);
+            assert.equal(err, null);
+            assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
+            next();
+        };
     }
 
-    /* eslint-disable no-undef,block-scoped-var */
-    setTimeout(function stopTest1() {
-        server.stop();
-        producer.close();
-        assert.end();
-    }, 1500);
-    /* eslint-enable no-undef,block-scoped-var */
+    function generateErrorCheck(next) {
+        return function onTopicNotFoundError(err, res) {
+            assert.equal(producer.restClient.enable, true);
+            assert.throws(function throwError() {
+                if (err) {
+                    throw new Error('Topics Not Found.');
+                }
+            }, Error);
+            assert.equal(res, undefined);
+            next();
+        };
+    }
 });
 
 test('Kafka producer could write with produce and blacklist.', function testKafkaProducer(assert) {
-    var restServer = new KafkaRestProxyServer(7777);
+    var restServer = new KafkaRestProxyServer(4444);
     restServer.start();
     var blacklistServer = new MigratorBlacklistServer(2222);
     blacklistServer.start();
 
-    var PORT = 7777;
+    var PORT = 4444;
     var configs = {
         proxyHost: 'localhost',
         proxyPort: PORT,
@@ -140,40 +155,44 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
 
-    assert.equal(producer.restClient.enable, false);
-    producer.produce('testTopic0', 'Important message', onSuccessResponse);
-    producer.logLine('testTopic1', 'Important message', onBlacklistedError);
-    producer.logLine('testTopic10', 'Important message', onTopicNotFoundError);
-
-    function onSuccessResponse(err, res) {
+    function onConnect() {
         assert.equal(producer.restClient.enable, true);
-        assert.equal(err, null);
-        assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
+        async.parallel([
+            function test1(next) {
+                producer.produce('testTopic0', 'Important message', generateSuccessCheck(next));
+            },
+            function test3(next) {
+                producer.logLine('testTopic10', 'Important message', generateErrorCheck(next));
+            }
+        ], function end() {
+            restServer.stop();
+            blacklistServer.stop();
+            producer.close();
+            assert.end();
+        });
     }
 
-    function onBlacklistedError(err, res) {
-        assert.equal(producer.restClient.enable, true);
-        assert.equal(err, null);
-        assert.equal(res, 'Topic is not blacklisted, not produce data to kafka rest proxy.');
+    function generateSuccessCheck(next) {
+        return function onSuccessResponse(err, res) {
+            assert.equal(producer.restClient.enable, true);
+            assert.equal(err, null);
+            assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
+            next();
+        };
     }
 
-    function onTopicNotFoundError(err, res) {
-        assert.equal(producer.restClient.enable, true);
-        assert.throws(function throwError() {
-            if (err)
-                throw new Error('Topics Not Found.');
-        }, Error);
-        assert.equal(res, undefined);
+    function generateErrorCheck(next) {
+        return function onTopicNotFoundError(err, res) {
+            assert.equal(producer.restClient.enable, true);
+            assert.throws(function throwError() {
+                if (err) {
+                    throw new Error('Topics Not Found.');
+                }
+            }, Error);
+            assert.equal(res, undefined);
+            next();
+        };
     }
-
-    /* eslint-disable no-undef,block-scoped-var */
-    setTimeout(function stopTest1() {
-        restServer.stop();
-        blacklistServer.stop();
-        producer.close();
-        assert.end();
-    }, 1000);
-    /* eslint-enable no-undef,block-scoped-var */
 });
 
 test('Kafka producer handle unavailable proxy.', function testKafkaProducerHandleUnavailableProxy(assert) {
@@ -184,18 +203,22 @@ test('Kafka producer handle unavailable proxy.', function testKafkaProducerHandl
     };
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
-    assert.equal(producer.restClient.enable, false);
-    function onClientNotEnalbeError(err, res) {
-        assert.throws(function throwError() {
-            if (err)
-                throw new Error('Kafka Rest Client is not enabled yet.');
-        }, Error);
-        assert.equal(res, undefined);
-    }
 
-    producer.logLine('avro650', 'Important message', onClientNotEnalbeError);
-    producer.close();
-    assert.end();
+    function onConnect() {
+        assert.equal(producer.restClient.enable, false);
+        function onClientNotEnableError(err, res) {
+            assert.throws(function throwError() {
+                if (err) {
+                    throw new Error('Kafka Rest Client is not enabled yet.');
+                }
+            }, Error);
+            assert.equal(res, undefined);
+        }
+
+        producer.logLine('avro650', 'Important message', onClientNotEnableError);
+        producer.close();
+        assert.end();
+    }
 });
 
 test('Kafka producer refresh.', function testKafkaProducerTopicRefresh(assert) {
@@ -211,22 +234,24 @@ test('Kafka producer refresh.', function testKafkaProducerTopicRefresh(assert) {
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
     assert.equal(producer.restClient.topicDiscoveryTimes, 0);
-    /* eslint-disable no-undef,block-scoped-var */
-    setTimeout(function wait1() {
-        assert.equal(producer.restClient.topicDiscoveryTimes, 1);
-    }, 500);
-    setTimeout(function wait2() {
-        assert.equal(producer.restClient.topicDiscoveryTimes, 2);
-    }, 1500);
-    setTimeout(function wait3() {
-        assert.equal(producer.restClient.topicDiscoveryTimes, 3);
-    }, 2500);
-    setTimeout(function stopTest2() {
-        producer.close();
-        server2.stop();
-        assert.end();
-    }, 3000);
-    /* eslint-enable no-undef,block-scoped-var */
+    function onConnect() {
+        /* eslint-disable no-undef,block-scoped-var */
+        setTimeout(function wait1() {
+            assert.equal(producer.restClient.topicDiscoveryTimes, 1);
+        }, 500);
+        setTimeout(function wait2() {
+            assert.equal(producer.restClient.topicDiscoveryTimes, 2);
+        }, 1500);
+        setTimeout(function wait3() {
+            assert.equal(producer.restClient.topicDiscoveryTimes, 3);
+        }, 2500);
+        setTimeout(function stopTest2() {
+            producer.close();
+            server2.stop();
+            assert.end();
+        }, 3000);
+        /* eslint-enable no-undef,block-scoped-var */
+    }
 });
 
 test('Test get whole msg', function testKafkaProducerGetWholeMsgFunction(assert) {
@@ -240,22 +265,24 @@ test('Test get whole msg', function testKafkaProducerGetWholeMsgFunction(assert)
     var hostName = require('os').hostname();
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
-    var testTopic = 'testTopic0';
-    var testMsg = 'testMsg0';
-    var wholeMsg = producer.getWholeMsg(testTopic, testMsg, testTimeStamp);
+    function onConnect() {
+        var testTopic = 'testTopic0';
+        var testMsg = 'testMsg0';
+        var wholeMsg = producer.getWholeMsg(testTopic, testMsg, testTimeStamp);
 
-    // console.log(wholeMsg);
-    assert.equal(wholeMsg.host, hostName);
-    assert.equal(wholeMsg.msg, testMsg);
-    assert.equal(wholeMsg.topic, testTopic);
-    assert.equal(wholeMsg.ts, testTimeStamp);
-    assert.end();
-    producer.close();
+        assert.equal(wholeMsg.host, hostName);
+        assert.equal(wholeMsg.msg, testMsg);
+        assert.equal(wholeMsg.topic, testTopic);
+        assert.equal(wholeMsg.ts, testTimeStamp);
+        assert.end();
+        producer.close();
+    }
 });
 
 test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(assert) {
     var server = new KafkaRestProxyServer(4444);
     server.start();
+    assert.plan(4);
 
     var PORT = 4444;
     var configs = {
@@ -266,34 +293,33 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
     };
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
+    function onConnect() {
+        assert.equal(producer.restClient.enable, true);
+        producer.produce('testTopic0', 'Important message', Date.now() / 1000.0);
+        producer.produce('testTopic1', 'Important message', Date.now() / 1000.0);
+        producer.produce('testTopic1', 'Important message', Date.now() / 1000.0);
+        producer.logLine('testTopic2', 'Important message');
+        producer.logLine('testTopic2', 'Important message');
+        producer.logLine('testTopic2', 'Important message');
 
-    assert.equal(producer.restClient.enable, false);
-    producer.produce('testTopic0', 'Important message', Date.now() / 1000.0);
-    producer.produce('testTopic1', 'Important message', Date.now() / 1000.0);
-    producer.produce('testTopic1', 'Important message', Date.now() / 1000.0);
-    producer.logLine('testTopic2', 'Important message');
-    producer.logLine('testTopic2', 'Important message');
-    producer.logLine('testTopic2', 'Important message');
+        var auditMsg = producer._generateAuditMsg();
 
-    var auditMsg = producer._generateAuditMsg();
-    // console.log(auditMsg);
+        /* eslint-disable camelcase */
+        /* jshint camelcase: false */
+        var json = JSON.parse(auditMsg);
+        assert.equal(json.topic_count.testTopic0, 1);
+        assert.equal(json.topic_count.testTopic1, 2);
+        assert.equal(json.topic_count.testTopic2, 3);
+        /* jshint camelcase: true */
+        /* eslint-enable camelcase */
 
-    /* eslint-disable camelcase */
-    /* jshint camelcase: false */
-    var json = JSON.parse(auditMsg);
-    assert.equal(json.topic_count.testTopic0, 1);
-    assert.equal(json.topic_count.testTopic1, 2);
-    assert.equal(json.topic_count.testTopic2, 3);
-    /* jshint camelcase: true */
-    /* eslint-enable camelcase */
-
-    /* eslint-disable no-undef,block-scoped-var */
-    setTimeout(function stopTest1() {
-        server.stop();
-        producer.close();
-        assert.end();
-    }, 1000);
-    /* eslint-enable no-undef,block-scoped-var */
+        /* eslint-disable no-undef,block-scoped-var */
+        setTimeout(function stopTest1() {
+            server.stop();
+            producer.close();
+        }, 1000);
+        /* eslint-enable no-undef,block-scoped-var */
+    }
 });
 
 test('Test calc timeBeginInSec', function testKafkaProducerCalcTimeBeginInSec(assert) {

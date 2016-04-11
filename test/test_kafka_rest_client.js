@@ -22,6 +22,7 @@
 
 var rewire = require('rewire');
 var test = require('tape');
+var async = require('async');
 var KafkaRestProxyServer = require('./lib/test_kafka_rest_proxy');
 var KafkaRestClient = rewire('../lib/kafka_rest_client');
 var MigratorBlacklistServer = require('./lib/test_migrator_blacklist_server');
@@ -63,44 +64,8 @@ test('KafkaRestClient can discover topics', function testKafkaRestClientTopicDis
     assert.end();
 });
 
-test('KafkaRestClient handle failed post', function testKafkaRestClientHanldeFailedPostCall(assert) {
-    var configs = {
-        proxyHost: 'localhost',
-        proxyPort: 4444,
-        proxyRefreshTime: 0
-    };
-    var timeStamp = Date.now() / 1000.0;
-    var restClient = new KafkaRestClient({
-        proxyHost: configs.proxyHost,
-        proxyPort: configs.proxyPort,
-        refreshTime: configs.proxyRefreshTime,
-        maxRetries: 0
-    });
-
-    function getProduceMessage(topic, message, ts, type) {
-        var produceMessage = {};
-        produceMessage.topic = topic;
-        produceMessage.message = message;
-        produceMessage.timeStamp = ts;
-        produceMessage.type = type;
-        return produceMessage;
-    }
-
-    restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
-        function assertHttpErrorReason(err) {
-            assert.equal(err.reason, 'connect ECONNREFUSED');
-        });
-
-    /* eslint-disable no-undef,block-scoped-var */
-    setTimeout(function stopAll() {
-        restClient.close();
-        assert.end();
-    }, 3000);
-    /* eslint-enable no-undef,block-scoped-var */
-});
-
 test('KafkaRestClient handle failed post with retries', function testKafkaRestClientHanldeFailedPostCall(assert) {
-    var server = new KafkaRestProxyServer(5390);
+    var server = new KafkaRestProxyServer(5555);
 
     var configs = {
         proxyHost: 'localhost',
@@ -111,10 +76,9 @@ test('KafkaRestClient handle failed post with retries', function testKafkaRestCl
     var restClient = new KafkaRestClient({
         proxyHost: configs.proxyHost,
         proxyPort: configs.proxyPort,
-        localAgentPort: 5390,
-        produceInterval: 600,
-        refreshTime: configs.proxyRefreshTime,
-        maxRetries: 3
+        localAgentPort: 5555,
+        produceInterval: 100,
+        refreshTime: configs.proxyRefreshTime
     });
 
     function getProduceMessage(topic, message, ts, type) {
@@ -126,37 +90,44 @@ test('KafkaRestClient handle failed post with retries', function testKafkaRestCl
         return produceMessage;
     }
 
-    restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
-        function assertHttpErrorReason(err) {
-            assert.equal(err.reason, 'connect ECONNREFUSED');
-        });
-
-    restClient.produce(getProduceMessage('hp.testTopic1', 'msg1', timeStamp, 'binary'),
-        function assertErrorThrows(err) {
-            assert.equal(err.reason, 'connect ECONNREFUSED');
-        });
-
-    /* eslint-disable no-undef */
-    setTimeout(function secondTest() {
+    async.parallel([
+        function test1(next) {
+            restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
+                function assertHttpErrorReason(err) {
+                    assert.equal(err.reason, 'connect ECONNREFUSED');
+                    next();
+                });
+        },
+        function test2(next) {
+            restClient.produce(getProduceMessage('hp.testTopic1', 'msg1', timeStamp, 'binary'),
+                function assertErrorThrows(err) {
+                    assert.equal(err.reason, 'connect ECONNREFUSED');
+                    next();
+                });
+        }
+    ], function secondPart() {
         server.start();
-        restClient.produce(getProduceMessage('testTopic1', 'msg1', timeStamp, 'binary'),
-            function assertErrorThrows(err) {
-                assert.equal(err.reason, 'connect ECONNREFUSED');
-            });
-        restClient.produce(getProduceMessage('hp.testTopic1', 'msg1', timeStamp, 'binary'),
-            function assertErrorThrows(err) {
-                assert.equal(err, null);
-            });
-    }, 4000);
-    /* eslint-disable no-undef */
-
-    /* eslint-disable no-undef,block-scoped-var */
-    setTimeout(function stopAll() {
-        restClient.close();
-        server.stop();
-        assert.end();
-    }, 8000);
-    /* eslint-enable no-undef,block-scoped-var */
+        async.parallel([
+            function test3(next) {
+                restClient.produce(getProduceMessage('testTopic0', 'msg1', timeStamp, 'binary'),
+                    function assertErrorThrows(err) {
+                        assert.equal(err.reason, 'connect ECONNREFUSED');
+                        next();
+                    });
+            },
+            function test4(next) {
+                restClient.produce(getProduceMessage('hp.testTopic1', 'msg1', timeStamp, 'binary'),
+                    function assertErrorThrows(err) {
+                        assert.equal(err, null);
+                        next();
+                    });
+            }
+        ], function end() {
+            restClient.close();
+            server.stop();
+            assert.end();
+        });
+    });
 });
 
 test('KafkaRestClient handle not cached topics', function testKafkaRestClientHanldeFailedPostCall(assert) {
@@ -172,7 +143,7 @@ test('KafkaRestClient handle not cached topics', function testKafkaRestClientHan
         proxyHost: configs.proxyHost,
         proxyPort: configs.proxyPort,
         refreshTime: configs.proxyRefreshTime,
-        maxRetries: 1
+        produceInterval: 100
     });
 
     function getProduceMessage(topic, message, ts, type) {
@@ -184,28 +155,31 @@ test('KafkaRestClient handle not cached topics', function testKafkaRestClientHan
         return produceMessage;
     }
 
-    restClient.produce(getProduceMessage('testTopic-not-in-map', 'msg0', timeStamp, 'binary'),
-        function assertHttpErrorReason(err) {
-            assert.equal(err.reason, 'connect ECONNREFUSED');
-            server.start();
-            restClient.produce(getProduceMessage('testTopic-not-in-map', 'msg0', timeStamp, 'binary'),
-                function assertHttpErrorReason2(err2) {
-                    assert.equal(err2, null);
+    async.parallel([
+        function test1(next) {
+            restClient.produce(getProduceMessage('hp-testTopic-not-in-map', 'msg0', timeStamp, 'binary'),
+                function assertErrorThrows(err) {
+                    assert.equal(err.message, 'Topics Not Found.');
+                    next();
                 });
-        });
-
-    restClient.produce(getProduceMessage('hp-testTopic-not-in-map', 'msg0', timeStamp, 'binary'),
-        function assertErrorThrows(err) {
-            assert.equal(err.message, 'Topics Not Found.');
-        });
-
-    /* eslint-disable no-undef,block-scoped-var */
-    setTimeout(function stopAll() {
+        },
+        function test2(next) {
+            restClient.produce(getProduceMessage('testTopic-not-in-map', 'msg0', timeStamp, 'binary'),
+                function assertHttpErrorReason(err) {
+                    assert.equal(err.reason, 'connect ECONNREFUSED');
+                    server.start();
+                    restClient.produce(getProduceMessage('testTopic-not-in-map', 'msg0', timeStamp, 'binary'),
+                        function assertHttpErrorReason2(err2) {
+                            assert.equal(err2, null);
+                            next();
+                        });
+                });
+        }
+    ], function end() {
         restClient.close();
         server.stop();
         assert.end();
-    }, 8000);
-    /* eslint-enable no-undef,block-scoped-var */
+    });
 });
 
 test('KafkaRestClient handle post with blacklist client', function testKafkaRestClientHanldeFailedPostCall(assert) {
@@ -223,8 +197,8 @@ test('KafkaRestClient handle post with blacklist client', function testKafkaRest
         proxyHost: configs.proxyHost,
         proxyPort: configs.proxyPort,
         refreshTime: configs.proxyRefreshTime,
-        blacklistMigratorHttpClient: migratorBlacklistClient,
-        maxRetries: 1
+        produceInterval: 100,
+        blacklistMigratorHttpClient: migratorBlacklistClient
     });
 
     function getProduceMessage(topic, message, ts, type) {
@@ -236,22 +210,25 @@ test('KafkaRestClient handle post with blacklist client', function testKafkaRest
         return produceMessage;
     }
 
-    restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
-        function assertHttpErrorReason(err) {
-            assert.equal(err.reason, 'connect ECONNREFUSED');
-        });
-
-    restClient.produce(getProduceMessage('testTopic1', 'msg0', timeStamp, 'binary'),
-        function assertErrorThrows(err, resp) {
-            assert.equal(err.reason, 'connect ECONNREFUSED');
-            assert.equal(resp, undefined);
-        });
-
-    /* eslint-disable no-undef,block-scoped-var */
-    setTimeout(function stopAll() {
+    async.parallel([
+        function test1(next) {
+            restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
+                function assertHttpErrorReason(err) {
+                    assert.equal(err.reason, 'connect ECONNREFUSED');
+                    next();
+                });
+        },
+        function test2(next) {
+            restClient.produce(getProduceMessage('testTopic1', 'msg0', timeStamp, 'binary'),
+                function assertErrorThrows(err, resp) {
+                    assert.equal(err.reason, 'connect ECONNREFUSED');
+                    assert.equal(resp, undefined);
+                    next();
+                });
+        }
+    ], function end() {
         restClient.close();
         server.stop();
         assert.end();
-    }, 8000);
-    /* eslint-enable no-undef,block-scoped-var */
+    });
 });
