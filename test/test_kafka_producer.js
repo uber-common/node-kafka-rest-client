@@ -138,6 +138,67 @@ test('Kafka producer could write with batched produce.', function testKafkaProdu
     }
 });
 
+test('Kafka producer could write with blacklisted batched produce.', function testKafkaProducer(assert) {
+    var server = new KafkaRestProxyServer(4444);
+    server.start();
+
+    var PORT = 4444;
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: PORT,
+        proxyRefreshTime: 0,
+        batching: true,
+        batchingBlacklist: [
+            'testTopic1'
+        ]
+    };
+    var producer = new KafkaProducer(configs);
+    // Override the batch function to always return an error, `testTopic1` should not hit this,
+    // but `testTopic0` should
+    producer.batch = function batchOverride(topic, message, timestamp, callback) {
+        callback('This errors');
+    };
+    producer.connect(onConnect);
+
+    function onConnect() {
+        assert.equal(producer.restClient.enable, true);
+        async.parallel([
+            function test1(next) {
+                producer.produce('testTopic0', 'Important message', generateErrorCheck(next));
+            },
+            function test2(next) {
+                producer.logLine('testTopic1', 'Important message', generateSuccessCheck(next));
+            }
+        ], function end() {
+            server.stop();
+            producer.close();
+            assert.end();
+        });
+    }
+
+    function generateSuccessCheck(next) {
+        return function onSuccessResponse(err, res) {
+            assert.equal(producer.restClient.enable, true);
+            assert.equal(err, null);
+            assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
+            next();
+        };
+    }
+
+    function generateErrorCheck(next) {
+        return function onTopicNotFoundError(err, res) {
+            assert.equal(producer.restClient.enable, true);
+            assert.throws(function throwError() {
+                if (err) {
+                    throw new Error('Topics Not Found.');
+                }
+            }, Error);
+            assert.equal(res, undefined);
+            next();
+        };
+    }
+});
+
 test('Kafka producer could write with produce and blacklist.', function testKafkaProducer(assert) {
     var restServer = new KafkaRestProxyServer(4444);
     restServer.start();
