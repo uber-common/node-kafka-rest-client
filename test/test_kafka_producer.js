@@ -241,6 +241,7 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
             next();
         };
     }
+
     function generateErrorCheck(next) {
         return function onTopicNotFoundError(err, res) {
             assert.equal(producer.restClient.enable, true);
@@ -274,6 +275,7 @@ test('Kafka producer handle unavailable proxy.', function testKafkaProducerHandl
             }, Error);
             assert.equal(res, undefined);
         }
+
         producer.logLine('avro650', 'Important message', onClientNotEnableError);
         producer.close();
         assert.end();
