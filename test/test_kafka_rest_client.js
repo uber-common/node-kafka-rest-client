@@ -232,38 +232,3 @@ test('KafkaRestClient handle post with blacklist client', function testKafkaRest
         assert.end();
     });
 });
-/*
-test('KafkaRestClient handle failed rest proxy connection', function testKafkaRestClientHanldeFailedRPConnection(assert) {
-    var restClientOptions = {
-        proxyHost: 'localhost',
-        proxyPort: 8080,
-        refreshTime: 6000,
-        proxyReconnectTime: 1000
-    };
-    var restClient = new KafkaRestClient(restClientOptions,
-        function onConnectRestClient(err) {
-            if (!err) {
-                //console.log(err);
-            } else {
-                console.log(err);
-            }
-        }
-    );
-
-    async.parallel([
-        function test1(next) {
-            restClient = new KafkaRestClient(restClientOptions,
-                function assertErrorThrows(err) {
-                    console.log(err);
-                    assert.equal(err.message, 'Failed to discover topics mapping');
-                    next();
-                }
-            );
-        }
-
-    ], function end() {
-        restClient.close();
-        //server.stop();
-        assert.end();
-    });
-});*/

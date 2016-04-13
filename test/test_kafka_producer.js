@@ -388,3 +388,28 @@ test('Test calc timeBeginInSec', function testKafkaProducerCalcTimeBeginInSec(as
     assert.equal(timeBeginInSec % 600, 0);
     assert.end();
 });
+
+test('kafkaProducer handle failed rest proxy connection2', function testKafkaProducerHanldeFailedRPConnection(assert) {
+    var server = new KafkaRestProxyServer(8082);
+
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: 8082,
+        proxyRefreshTime: 500
+    };
+
+    var kafkaProducer = new KafkaProducer(configs);
+    kafkaProducer.connect(function assertErrorThrows() {
+        assert.equal(kafkaProducer.restClient.enable, false);
+        server.start();
+        kafkaProducer.restClient.secondReconnectWaitTime = 500;
+        /* eslint-disable no-undef,block-scoped-var */
+        setTimeout(function stopTest1() {
+            assert.equal(kafkaProducer.restClient.enable, true);
+            kafkaProducer.close();
+            server.stop();
+            assert.end();
+        }, 600);
+        /* eslint-enable no-undef,block-scoped-var */
+    });
+});
