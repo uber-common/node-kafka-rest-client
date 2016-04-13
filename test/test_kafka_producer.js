@@ -47,7 +47,11 @@ test('Kafka producer could write with produce.', function testKafkaProducer(asse
                 producer.produce('testTopic0', 'Important message', generateSuccessCheck(next));
             },
             function test2(next) {
-                producer.logLine('testTopic1', 'Important message', generateSuccessCheck(next));
+                /* eslint-disable camelcase */
+                /* jshint camelcase: false */
+                producer.log_line('testTopic1', 'Important message', generateSuccessCheck(next));
+                /* eslint-enable camelcase */
+                /* jshint camelcase: true */
             },
             function test3(next) {
                 producer.logLine('testTopic10', 'Important message', generateErrorCheck(next));
@@ -422,12 +426,12 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
         producer.produce('testTopic1', 'Important message', Date.now() / 1000.0);
         producer.logLine('testTopic2', 'Important message');
         producer.logLine('testTopic2', 'Important message');
-        producer.logLine('testTopic2', 'Important message');
+        /* eslint-disable camelcase */
+        /* jshint camelcase: false */
+        producer.log_line('testTopic2', 'Important message');
 
         var auditMsg = producer._generateAuditMsg();
 
-        /* eslint-disable camelcase */
-        /* jshint camelcase: false */
         var json = JSON.parse(auditMsg);
         assert.equal(json.topic_count.testTopic0, 1);
         assert.equal(json.topic_count.testTopic1, 2);
