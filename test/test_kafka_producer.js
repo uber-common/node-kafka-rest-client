@@ -142,6 +142,51 @@ test('Kafka producer could write with batched produce.', function testKafkaProdu
     }
 });
 
+test('Kafka producer properly handles large messages.', function testKafkaProducer(assert) {
+    var server = new KafkaRestProxyServer(4444);
+    server.start();
+
+    var PORT = 4444;
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: PORT,
+        proxyRefreshTime: 0,
+        batching: true
+    };
+    var producer = new KafkaProducer(configs);
+    producer.connect(onConnect);
+
+    // Specifically test to make sure we batch messages at the 100k
+    // limit correctly
+    var almostTooLargeMessage = new Array(100000 - 7).join('a');
+    var tooLargeMessage = almostTooLargeMessage + 'b';
+
+    function onConnect() {
+        assert.equal(producer.restClient.enable, true);
+        async.parallel([
+            function test1(next) {
+                producer.produce('testTopic0', almostTooLargeMessage, 0, generateSuccessCheck(next));
+            },
+            function test2(next) {
+                producer.produce('testTopic0', tooLargeMessage, 0, generateSuccessCheck(next));
+            }
+        ], function end() {
+            server.stop();
+            producer.close();
+            assert.end();
+        });
+    }
+
+    function generateSuccessCheck(next) {
+        return function onSuccessResponse(err, res) {
+            assert.equal(producer.restClient.enable, true);
+            assert.equal(err, null);
+            assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
+            next();
+        };
+    }
+});
+
 test('Kafka producer could write with blacklisted batched produce.', function testKafkaProducer(assert) {
     var server = new KafkaRestProxyServer(4444);
     server.start();
