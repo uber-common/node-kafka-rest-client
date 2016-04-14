@@ -160,30 +160,28 @@ test('Kafka producer properly handles large messages.', function testKafkaProduc
     // limit correctly
     var almostTooLargeMessage = new Array(100000 - 7).join('a');
     var tooLargeMessage = almostTooLargeMessage + 'b';
+    var topic = 'testTopic0';
 
     function onConnect() {
         assert.equal(producer.restClient.enable, true);
-        async.parallel([
-            function test1(next) {
-                producer.produce('testTopic0', almostTooLargeMessage, 0, generateSuccessCheck(next));
-            },
-            function test2(next) {
-                producer.produce('testTopic0', tooLargeMessage, 0, generateSuccessCheck(next));
-            }
-        ], function end() {
-            server.stop();
-            producer.close();
-            assert.end();
-        });
-    }
 
-    function generateSuccessCheck(next) {
-        return function onSuccessResponse(err, res) {
-            assert.equal(producer.restClient.enable, true);
-            assert.equal(err, null);
-            assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
-            next();
-        };
+        // This message is too large, it shouldn't end up in the batch
+        producer.produce(topic, tooLargeMessage, 0);
+        assert.equal(producer.topicToBatchQueue[topic].numMessages, 0);
+
+        // This message is exactly at the max size, it should end up in the batch
+        producer.produce(topic, almostTooLargeMessage, 0);
+        assert.equal(producer.topicToBatchQueue[topic].numMessages, 1);
+        assert.equal(producer.topicToBatchQueue[topic].sizeBytes, almostTooLargeMessage.length + 8);
+
+        // This message is too large, it shouldn't end up in the
+        // batch, and shouldn't trigger the batch to flush.
+        producer.produce(topic, tooLargeMessage, 0);
+        assert.equal(producer.topicToBatchQueue[topic].numMessages, 1);
+
+        server.stop();
+        producer.close();
+        assert.end();
     }
 });
 
