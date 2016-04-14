@@ -389,7 +389,7 @@ test('Test calc timeBeginInSec', function testKafkaProducerCalcTimeBeginInSec(as
     assert.end();
 });
 
-test('kafkaProducer handle failed rest proxy connection2', function testKafkaProducerHanldeFailedRPConnection(assert) {
+test('kafkaProducer handle failed rest proxy connection', function testKafkaProducerHanldeFailedRPConnection(assert) {
     var server = new KafkaRestProxyServer(8082);
 
     var configs = {
