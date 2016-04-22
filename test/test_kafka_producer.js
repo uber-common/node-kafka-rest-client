@@ -259,8 +259,7 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
 test('Kafka producer handle unavailable proxy.', function testKafkaProducerHandleUnavailableProxy(assert) {
     var configs = {
         proxyHost: 'localhost',
-        proxyPort: 5555,
-        proxyRefreshTime: 0
+        proxyPort: 5555
     };
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
@@ -319,7 +318,6 @@ test('Test get whole msg', function testKafkaProducerGetWholeMsgFunction(assert)
     var configs = {
         proxyHost: 'localhost',
         proxyPort: 8888,
-        proxyRefreshTime: 0,
         shouldAddTopicToMessage: true
     };
     var testTimeStamp = Date.now() / 1000.0;
@@ -349,7 +347,6 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
     var configs = {
         proxyHost: 'localhost',
         proxyPort: PORT,
-        proxyRefreshTime: 0,
         enableAudit: true
     };
     var producer = new KafkaProducer(configs);
@@ -394,8 +391,7 @@ test('kafkaProducer handle failed rest proxy connection', function testKafkaProd
 
     var configs = {
         proxyHost: 'localhost',
-        proxyPort: 8082,
-        proxyRefreshTime: 500
+        proxyPort: 8082
     };
 
     var kafkaProducer = new KafkaProducer(configs);
