@@ -47,7 +47,11 @@ test('Kafka producer could write with produce.', function testKafkaProducer(asse
                 producer.produce('testTopic0', 'Important message', generateSuccessCheck(next));
             },
             function test2(next) {
-                producer.logLine('testTopic1', 'Important message', generateSuccessCheck(next));
+                /* eslint-disable camelcase */
+                /* jshint camelcase: false */
+                producer.log_line('testTopic1', 'Important message', generateSuccessCheck(next));
+                /* eslint-enable camelcase */
+                /* jshint camelcase: true */
             },
             function test3(next) {
                 producer.logLine('testTopic10', 'Important message', generateErrorCheck(next));
@@ -138,6 +142,49 @@ test('Kafka producer could write with batched produce.', function testKafkaProdu
     }
 });
 
+test('Kafka producer properly handles large messages.', function testKafkaProducer(assert) {
+    var server = new KafkaRestProxyServer(4444);
+    server.start();
+
+    var PORT = 4444;
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: PORT,
+        proxyRefreshTime: 0,
+        batching: true
+    };
+    var producer = new KafkaProducer(configs);
+    producer.connect(onConnect);
+
+    // Specifically test to make sure we batch messages at the 100k
+    // limit correctly
+    var almostTooLargeMessage = new Array(100000 - 7).join('a');
+    var tooLargeMessage = almostTooLargeMessage + 'b';
+    var topic = 'testTopic0';
+
+    function onConnect() {
+        assert.equal(producer.restClient.enable, true);
+
+        // This message is too large, it shouldn't end up in the batch
+        producer.produce(topic, tooLargeMessage, 0);
+        assert.equal(producer.topicToBatchQueue[topic].numMessages, 0);
+
+        // This message is exactly at the max size, it should end up in the batch
+        producer.produce(topic, almostTooLargeMessage, 0);
+        assert.equal(producer.topicToBatchQueue[topic].numMessages, 1);
+        assert.equal(producer.topicToBatchQueue[topic].sizeBytes, almostTooLargeMessage.length + 8);
+
+        // This message is too large, it shouldn't end up in the
+        // batch, and shouldn't trigger the batch to flush.
+        producer.produce(topic, tooLargeMessage, 0);
+        assert.equal(producer.topicToBatchQueue[topic].numMessages, 1);
+
+        server.stop();
+        producer.close();
+        assert.end();
+    }
+});
+
 test('Kafka producer could write with blacklisted batched produce.', function testKafkaProducer(assert) {
     var server = new KafkaRestProxyServer(4444);
     server.start();
@@ -150,6 +197,67 @@ test('Kafka producer could write with blacklisted batched produce.', function te
         batching: true,
         batchingBlacklist: [
             'testTopic1'
+        ]
+    };
+    var producer = new KafkaProducer(configs);
+    // Override the batch function to always return an error, `testTopic1` should not hit this,
+    // but `testTopic0` should
+    producer.batch = function batchOverride(topic, message, timestamp, callback) {
+        callback('This errors');
+    };
+    producer.connect(onConnect);
+
+    function onConnect() {
+        assert.equal(producer.restClient.enable, true);
+        async.parallel([
+            function test1(next) {
+                producer.produce('testTopic0', 'Important message', generateErrorCheck(next));
+            },
+            function test2(next) {
+                producer.logLine('testTopic1', 'Important message', generateSuccessCheck(next));
+            }
+        ], function end() {
+            server.stop();
+            producer.close();
+            assert.end();
+        });
+    }
+
+    function generateSuccessCheck(next) {
+        return function onSuccessResponse(err, res) {
+            assert.equal(producer.restClient.enable, true);
+            assert.equal(err, null);
+            assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
+            next();
+        };
+    }
+
+    function generateErrorCheck(next) {
+        return function onTopicNotFoundError(err, res) {
+            assert.equal(producer.restClient.enable, true);
+            assert.throws(function throwError() {
+                if (err) {
+                    throw new Error('Topics Not Found.');
+                }
+            }, Error);
+            assert.equal(res, undefined);
+            next();
+        };
+    }
+});
+
+test('Kafka producer could write with whitelisted batched produce.', function testKafkaProducer(assert) {
+    var server = new KafkaRestProxyServer(4444);
+    server.start();
+
+    var PORT = 4444;
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: PORT,
+        proxyRefreshTime: 0,
+        batching: true,
+        batchingWhitelist: [
+            'testTopic0'
         ]
     };
     var producer = new KafkaProducer(configs);
@@ -358,12 +466,12 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
         producer.produce('testTopic1', 'Important message', Date.now() / 1000.0);
         producer.logLine('testTopic2', 'Important message');
         producer.logLine('testTopic2', 'Important message');
-        producer.logLine('testTopic2', 'Important message');
+        /* eslint-disable camelcase */
+        /* jshint camelcase: false */
+        producer.log_line('testTopic2', 'Important message');
 
         var auditMsg = producer._generateAuditMsg();
 
-        /* eslint-disable camelcase */
-        /* jshint camelcase: false */
         var json = JSON.parse(auditMsg);
         assert.equal(json.topic_count.testTopic0, 1);
         assert.equal(json.topic_count.testTopic1, 2);
