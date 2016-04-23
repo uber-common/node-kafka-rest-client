@@ -367,8 +367,7 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
 test('Kafka producer handle unavailable proxy.', function testKafkaProducerHandleUnavailableProxy(assert) {
     var configs = {
         proxyHost: 'localhost',
-        proxyPort: 5555,
-        proxyRefreshTime: 0
+        proxyPort: 5555
     };
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
@@ -427,7 +426,6 @@ test('Test get whole msg', function testKafkaProducerGetWholeMsgFunction(assert)
     var configs = {
         proxyHost: 'localhost',
         proxyPort: 8888,
-        proxyRefreshTime: 0,
         shouldAddTopicToMessage: true
     };
     var testTimeStamp = Date.now() / 1000.0;
@@ -457,7 +455,6 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
     var configs = {
         proxyHost: 'localhost',
         proxyPort: PORT,
-        proxyRefreshTime: 0,
         enableAudit: true
     };
     var producer = new KafkaProducer(configs);
@@ -495,4 +492,28 @@ test('Test calc timeBeginInSec', function testKafkaProducerCalcTimeBeginInSec(as
     var timeBeginInSec = Math.floor((Date.now() / 1000) / 600) * 600;
     assert.equal(timeBeginInSec % 600, 0);
     assert.end();
+});
+
+test('kafkaProducer handle failed rest proxy connection', function testKafkaProducerHanldeFailedRPConnection(assert) {
+    var server = new KafkaRestProxyServer(8082);
+
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: 8082
+    };
+
+    var kafkaProducer = new KafkaProducer(configs);
+    kafkaProducer.connect(function assertErrorThrows() {
+        assert.equal(kafkaProducer.restClient.enable, false);
+        server.start();
+        kafkaProducer.restClient.secondReconnectWaitTime = 500;
+        /* eslint-disable no-undef,block-scoped-var */
+        setTimeout(function stopTest1() {
+            assert.equal(kafkaProducer.restClient.enable, true);
+            kafkaProducer.close();
+            server.stop();
+            assert.end();
+        }, 600);
+        /* eslint-enable no-undef,block-scoped-var */
+    });
 });
