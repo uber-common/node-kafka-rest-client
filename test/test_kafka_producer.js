@@ -506,7 +506,6 @@ test('kafkaProducer handle failed rest proxy connection', function testKafkaProd
     kafkaProducer.connect(function assertErrorThrows() {
         assert.equal(kafkaProducer.restClient.enable, false);
         server.start();
-        kafkaProducer.restClient.secondReconnectWaitTime = 500;
         /* eslint-disable no-undef,block-scoped-var */
         setTimeout(function stopTest1() {
             assert.equal(kafkaProducer.restClient.enable, true);
@@ -515,5 +514,47 @@ test('kafkaProducer handle failed rest proxy connection', function testKafkaProd
             assert.end();
         }, 600);
         /* eslint-enable no-undef,block-scoped-var */
+    });
+});
+
+test('kafkaProducer handle no meta data situation', function testKafkaProducerHanldeNoMetaData(assert) {
+    var server = new KafkaRestProxyServer(5390);
+
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: 1111
+    };
+    var kafkaProducer = new KafkaProducer(configs);
+    kafkaProducer.connect(function assertErrorThrows() {
+        assert.equal(kafkaProducer.restClient.enable, false);
+        async.parallel([
+            function test1(next) {
+                kafkaProducer.produce('testTopic0', 'Important message', Date.now() / 1000.0,
+                    function assertErrorThrows1(err) {
+                        assert.equal(err.message, 'Kafka Rest Client is not enabled yet.');
+                        next();
+                    });
+            },
+            function test2(next) {
+                kafkaProducer.produce('hp_testTopic0', 'Important message', Date.now() / 1000.0,
+                    function assertErrorThrows2(err) {
+                        assert.equal(err.reason, 'connect ECONNREFUSED');
+                        next();
+                    });
+            }
+        ], function end() {
+            server.start();
+            kafkaProducer.produce('testTopic0', 'Important message', Date.now() / 1000.0,
+                function assertErrorThrows3(err) {
+                    assert.equal(err.message, 'Kafka Rest Client is not enabled yet.');
+                    kafkaProducer.produce('hp_testTopic0', 'Important message', Date.now() / 1000.0,
+                        function assertNoErrorThrows(err2) {
+                            assert.equal(err2, null);
+                            kafkaProducer.close();
+                            server.stop();
+                            assert.end();
+                        });
+                });
+        });
     });
 });
