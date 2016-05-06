@@ -367,8 +367,7 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
 test('Kafka producer handle unavailable proxy.', function testKafkaProducerHandleUnavailableProxy(assert) {
     var configs = {
         proxyHost: 'localhost',
-        proxyPort: 5555,
-        proxyRefreshTime: 0
+        proxyPort: 5555
     };
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
@@ -427,7 +426,6 @@ test('Test get whole msg', function testKafkaProducerGetWholeMsgFunction(assert)
     var configs = {
         proxyHost: 'localhost',
         proxyPort: 8888,
-        proxyRefreshTime: 0,
         shouldAddTopicToMessage: true
     };
     var testTimeStamp = Date.now() / 1000.0;
@@ -457,7 +455,6 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
     var configs = {
         proxyHost: 'localhost',
         proxyPort: PORT,
-        proxyRefreshTime: 0,
         enableAudit: true
     };
     var producer = new KafkaProducer(configs);
@@ -495,4 +492,69 @@ test('Test calc timeBeginInSec', function testKafkaProducerCalcTimeBeginInSec(as
     var timeBeginInSec = Math.floor((Date.now() / 1000) / 600) * 600;
     assert.equal(timeBeginInSec % 600, 0);
     assert.end();
+});
+
+test('kafkaProducer handle failed rest proxy connection', function testKafkaProducerHanldeFailedRPConnection(assert) {
+    var server = new KafkaRestProxyServer(8082);
+
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: 8082
+    };
+
+    var kafkaProducer = new KafkaProducer(configs);
+    kafkaProducer.connect(function assertErrorThrows() {
+        assert.equal(kafkaProducer.restClient.enable, false);
+        server.start();
+        /* eslint-disable no-undef,block-scoped-var */
+        setTimeout(function stopTest1() {
+            assert.equal(kafkaProducer.restClient.enable, true);
+            kafkaProducer.close();
+            server.stop();
+            assert.end();
+        }, 600);
+        /* eslint-enable no-undef,block-scoped-var */
+    });
+});
+
+test('kafkaProducer handle no meta data situation', function testKafkaProducerHanldeNoMetaData(assert) {
+    var server = new KafkaRestProxyServer(5390);
+
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: 1111
+    };
+    var kafkaProducer = new KafkaProducer(configs);
+    kafkaProducer.connect(function assertErrorThrows() {
+        assert.equal(kafkaProducer.restClient.enable, false);
+        async.parallel([
+            function test1(next) {
+                kafkaProducer.produce('testTopic0', 'Important message', Date.now() / 1000.0,
+                    function assertErrorThrows1(err) {
+                        assert.equal(err.message, 'Kafka Rest Client is not enabled yet.');
+                        next();
+                    });
+            },
+            function test2(next) {
+                kafkaProducer.produce('hp_testTopic0', 'Important message', Date.now() / 1000.0,
+                    function assertErrorThrows2(err) {
+                        assert.equal(err.reason, 'connect ECONNREFUSED');
+                        next();
+                    });
+            }
+        ], function end() {
+            server.start();
+            kafkaProducer.produce('testTopic0', 'Important message', Date.now() / 1000.0,
+                function assertErrorThrows3(err) {
+                    assert.equal(err.message, 'Kafka Rest Client is not enabled yet.');
+                    kafkaProducer.produce('hp_testTopic0', 'Important message', Date.now() / 1000.0,
+                        function assertNoErrorThrows(err2) {
+                            assert.equal(err2, null);
+                            kafkaProducer.close();
+                            server.stop();
+                            assert.end();
+                        });
+                });
+        });
+    });
 });
