@@ -455,13 +455,16 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
     var configs = {
         proxyHost: 'localhost',
         proxyPort: PORT,
-        enableAudit: true
+        enableAudit: true,
+        auditTimeBucketIntervalInSec: 1
     };
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
     function onConnect() {
         assert.equal(producer.restClient.enable, true);
-        producer.produce('testTopic0', 'Important message', Date.now() / 1000.0);
+        for (var i = 0; i < 5120000; i++) {
+            producer.produce('testTopic0', 'Important message', Date.now() / 1000.0);
+        }
         producer.produce('testTopic1', 'Important message', Date.now() / 1000.0);
         producer.produce('testTopic1', 'Important message', Date.now() / 1000.0);
         producer.logLine('testTopic2', 'Important message');
@@ -470,12 +473,27 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
         /* jshint camelcase: false */
         producer.log_line('testTopic2', 'Important message');
 
-        var auditMsg = producer._generateAuditMsg();
+        var auditMsgs = producer._generateAuditMsgs();
+        var cntTestTopic0 = 0;
+        var cntTestTopic1 = 0;
+        var cntTestTopic2 = 0;
+        for (i = 0; i < auditMsgs.length; i++) {
+            var auditMsg = auditMsgs[i];
+            var json = JSON.parse(auditMsg);
+            if (json.topic_count.testTopic0) {
+                cntTestTopic0 += json.topic_count.testTopic0;
+            }
+            if (json.topic_count.testTopic1) {
+                cntTestTopic1 += json.topic_count.testTopic1;
+            }
+            if (json.topic_count.testTopic2) {
+                cntTestTopic2 += json.topic_count.testTopic2;
+            }
+        }
 
-        var json = JSON.parse(auditMsg);
-        assert.equal(json.topic_count.testTopic0, 1);
-        assert.equal(json.topic_count.testTopic1, 2);
-        assert.equal(json.topic_count.testTopic2, 3);
+        assert.equal(cntTestTopic0, 5120000);
+        assert.equal(cntTestTopic1, 2);
+        assert.equal(cntTestTopic2, 3);
         /* jshint camelcase: true */
         /* eslint-enable camelcase */
 
@@ -483,7 +501,7 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
         setTimeout(function stopTest1() {
             server.stop();
             producer.close();
-        }, 1000);
+        }, 2000);
         /* eslint-enable no-undef,block-scoped-var */
     }
 });
