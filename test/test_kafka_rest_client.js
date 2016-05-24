@@ -25,8 +25,6 @@ var test = require('tape');
 var async = require('async');
 var KafkaRestProxyServer = require('./lib/test_kafka_rest_proxy');
 var KafkaRestClient = rewire('../lib/kafka_rest_client');
-var MigratorBlacklistServer = require('./lib/test_migrator_blacklist_server');
-var MigratorBlacklistClient = require('../lib/migrator_blacklist_client');
 
 KafkaRestClient.__set__({
     'KafkaRestClient.prototype.getTopicRequestBody': function getTopicRequestBodyMock(proxyHost, proxyPort, callback) {
@@ -183,10 +181,6 @@ test('KafkaRestClient handle not cached topics', function testKafkaRestClientHan
 });
 
 test('KafkaRestClient handle post with blacklist client', function testKafkaRestClientHanldeFailedPostCall(assert) {
-    var server = new MigratorBlacklistServer(2222);
-    server.start();
-    var migratorBlacklistClient = new MigratorBlacklistClient('localhost:2222');
-
     var configs = {
         proxyHost: 'localhost',
         proxyPort: 1111,
@@ -197,8 +191,7 @@ test('KafkaRestClient handle post with blacklist client', function testKafkaRest
         proxyHost: configs.proxyHost,
         proxyPort: configs.proxyPort,
         refreshTime: configs.proxyRefreshTime,
-        produceInterval: 100,
-        blacklistMigratorHttpClient: migratorBlacklistClient
+        produceInterval: 100
     });
 
     function getProduceMessage(topic, message, ts, type) {
@@ -228,7 +221,6 @@ test('KafkaRestClient handle post with blacklist client', function testKafkaRest
         }
     ], function end() {
         restClient.close();
-        server.stop();
         assert.end();
     });
 });
