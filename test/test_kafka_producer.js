@@ -23,6 +23,7 @@
 var test = require('tape');
 var async = require('async');
 var KafkaProducer = require('../lib/kafka_producer');
+var KafkaVersion = require('../package.json').version;
 
 var KafkaRestProxyServer = require('./lib/test_kafka_rest_proxy');
 var MigratorBlacklistServer = require('./lib/test_migrator_blacklist_server');
@@ -449,7 +450,6 @@ test('Test get whole msg', function testKafkaProducerGetWholeMsgFunction(assert)
 test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(assert) {
     var server = new KafkaRestProxyServer(4444);
     server.start();
-    assert.plan(4);
 
     var PORT = 4444;
     var configs = {
@@ -489,11 +489,13 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
             if (json.topic_count.testTopic2) {
                 cntTestTopic2 += json.topic_count.testTopic2;
             }
+            assert.equal(json.version, KafkaVersion);
         }
 
         assert.equal(cntTestTopic0, 5120000);
         assert.equal(cntTestTopic1, 2);
         assert.equal(cntTestTopic2, 3);
+        assert.end();
         /* jshint camelcase: true */
         /* eslint-enable camelcase */
 
