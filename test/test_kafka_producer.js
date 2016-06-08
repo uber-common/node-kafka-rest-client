@@ -26,7 +26,6 @@ var KafkaProducer = require('../lib/kafka_producer');
 var KafkaVersion = require('../package.json').version;
 
 var KafkaRestProxyServer = require('./lib/test_kafka_rest_proxy');
-var MigratorBlacklistServer = require('./lib/test_migrator_blacklist_server');
 
 test('Kafka producer could write with produce.', function testKafkaProducer(assert) {
     var server = new KafkaRestProxyServer(4444);
@@ -311,16 +310,12 @@ test('Kafka producer could write with whitelisted batched produce.', function te
 test('Kafka producer could write with produce and blacklist.', function testKafkaProducer(assert) {
     var restServer = new KafkaRestProxyServer(4444);
     restServer.start();
-    var blacklistServer = new MigratorBlacklistServer(2222);
-    blacklistServer.start();
 
     var PORT = 4444;
     var configs = {
         proxyHost: 'localhost',
         proxyPort: PORT,
-        proxyRefreshTime: 0,
-        blacklistMigrator: true,
-        blacklistMigratorUrl: 'localhost:2222'
+        proxyRefreshTime: 0
     };
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
@@ -331,12 +326,11 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
             function test1(next) {
                 producer.produce('testTopic0', 'Important message', generateSuccessCheck(next));
             },
-            function test3(next) {
+            function test2(next) {
                 producer.logLine('testTopic10', 'Important message', generateErrorCheck(next));
             }
         ], function end() {
             restServer.stop();
-            blacklistServer.stop();
             producer.close();
             assert.end();
         });
