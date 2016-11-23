@@ -55,7 +55,7 @@ kafkaProducer.logLine('test', 'Important message', msgCallback);
 // Just dump log, no callback.
 kafkaProducer.logLine('test', 'Important message #1');
 // Just dump log, no callback.
-kafkaProducer.logLineWithTimeStamp('test', 'Important message #1.5', 'ts1.5');
+kafkaProducer.logLineWithTimeStamp('test', 'Important message #1.5', 1.5);
 // Just sends the raw message directly to kafka
 kafkaProducer.produce('test', 'Important message #2', 'ts2', msgCallback);
 // Just sends the raw message directly to kafka
