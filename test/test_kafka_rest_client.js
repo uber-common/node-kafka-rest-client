@@ -157,7 +157,7 @@ test('KafkaRestClient handle not cached topics', function testKafkaRestClientHan
         function test1(next) {
             restClient.produce(getProduceMessage('hp-testTopic-not-in-map', 'msg0', timeStamp, 'binary'),
                 function assertErrorThrows(err) {
-                    assert.equal(err.message, 'Topics Not Found.');
+                    assert.equal(err.reason, 'connect ECONNREFUSED');
                     next();
                 });
         },
