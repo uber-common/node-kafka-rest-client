@@ -467,7 +467,9 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
         /* jshint camelcase: false */
         producer.log_line('testTopic2', 'Important message');
 
-        var auditMsgs = producer._generateAuditMsgs();
+        // C3 and C2 use the same functions to generate audit msgs
+        var auditMsgs = producer._generateAuditMsgs(producer.auditTier, producer.auditDatacenter,
+            producer.topicToMsgcntMaps);
         var cntTestTopic0 = 0;
         var cntTestTopic1 = 0;
         var cntTestTopic2 = 0;
