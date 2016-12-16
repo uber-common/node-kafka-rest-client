@@ -1,11 +1,11 @@
 {
   "name": "kafka-rest-client",
-  "description": "Kafka rest client to produce json/ binary messages",
+  "description": "Kafka rest client to produce json/binary messages",
   "version": "1.8.0",
   "contributors": [
     "Xiang Fu <xiangfu@uber.com>"
   ],
-  "main": "./lib/kafka_producer.js",
+  "main": "./index.js",
   "dependencies": {
     "error": "^7.0.1",
     "lb_pool": "^1.2.0"
