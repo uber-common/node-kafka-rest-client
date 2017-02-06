@@ -41,7 +41,7 @@ test('Kafka producer could write with produce.', function testKafkaProducer(asse
     producer.connect(onConnect);
 
     function onConnect() {
-        assert.equal(producer.restClient.enable, true);
+        assert.equal(producer.producer.restClient.enable, true);
         async.parallel([
             function test1(next) {
                 producer.produce('testTopic0', 'Important message', generateSuccessCheck(next));
@@ -65,7 +65,7 @@ test('Kafka producer could write with produce.', function testKafkaProducer(asse
 
     function generateSuccessCheck(next) {
         return function onSuccessResponse(err, res) {
-            assert.equal(producer.restClient.enable, true);
+            assert.equal(producer.producer.restClient.enable, true);
             assert.equal(err, null);
             assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
             next();
@@ -74,7 +74,7 @@ test('Kafka producer could write with produce.', function testKafkaProducer(asse
 
     function generateErrorCheck(next) {
         return function onTopicNotFoundError(err, res) {
-            assert.equal(producer.restClient.enable, true);
+            assert.equal(producer.producer.restClient.enable, true);
             assert.throws(function throwError() {
                 if (err) {
                     throw new Error('Topics Not Found.');
@@ -101,7 +101,7 @@ test('Kafka producer could write with batched produce.', function testKafkaProdu
     producer.connect(onConnect);
 
     function onConnect() {
-        assert.equal(producer.restClient.enable, true);
+        assert.equal(producer.producer.restClient.enable, true);
         async.parallel([
             function test1(next) {
                 producer.produce('testTopic0', 'Important message', generateSuccessCheck(next));
@@ -121,7 +121,7 @@ test('Kafka producer could write with batched produce.', function testKafkaProdu
 
     function generateSuccessCheck(next) {
         return function onSuccessResponse(err, res) {
-            assert.equal(producer.restClient.enable, true);
+            assert.equal(producer.producer.restClient.enable, true);
             assert.equal(err, null);
             assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
             next();
@@ -130,7 +130,7 @@ test('Kafka producer could write with batched produce.', function testKafkaProdu
 
     function generateErrorCheck(next) {
         return function onTopicNotFoundError(err, res) {
-            assert.equal(producer.restClient.enable, true);
+            assert.equal(producer.producer.restClient.enable, true);
             assert.throws(function throwError() {
                 if (err) {
                     throw new Error('Topics Not Found.');
@@ -163,21 +163,21 @@ test('Kafka producer properly handles large messages.', function testKafkaProduc
     var topic = 'testTopic0';
 
     function onConnect() {
-        assert.equal(producer.restClient.enable, true);
+        assert.equal(producer.producer.restClient.enable, true);
 
         // This message is too large, it shouldn't end up in the batch
         producer.produce(topic, tooLargeMessage, 0);
-        assert.equal(producer.topicToBatchQueue[topic].numMessages, 0);
+        assert.equal(producer.producer.topicToBatchQueue[topic].numMessages, 0);
 
         // This message is exactly at the max size, it should end up in the batch
         producer.produce(topic, almostTooLargeMessage, 0);
-        assert.equal(producer.topicToBatchQueue[topic].numMessages, 1);
-        assert.equal(producer.topicToBatchQueue[topic].sizeBytes, almostTooLargeMessage.length + 8);
+        assert.equal(producer.producer.topicToBatchQueue[topic].numMessages, 1);
+        assert.equal(producer.producer.topicToBatchQueue[topic].sizeBytes, almostTooLargeMessage.length + 8);
 
         // This message is too large, it shouldn't end up in the
         // batch, and shouldn't trigger the batch to flush.
         producer.produce(topic, tooLargeMessage, 0);
-        assert.equal(producer.topicToBatchQueue[topic].numMessages, 1);
+        assert.equal(producer.producer.topicToBatchQueue[topic].numMessages, 1);
 
         server.stop();
         producer.close();
@@ -202,13 +202,13 @@ test('Kafka producer could write with blacklisted batched produce.', function te
     var producer = new KafkaProducer(configs);
     // Override the batch function to always return an error, `testTopic1` should not hit this,
     // but `testTopic0` should
-    producer.batch = function batchOverride(topic, message, timestamp, callback) {
+    producer.producer.batch = function batchOverride(topic, message, timestamp, callback) {
         callback('This errors');
     };
     producer.connect(onConnect);
 
     function onConnect() {
-        assert.equal(producer.restClient.enable, true);
+        assert.equal(producer.producer.restClient.enable, true);
         async.parallel([
             function test1(next) {
                 producer.produce('testTopic0', 'Important message', generateErrorCheck(next));
@@ -225,7 +225,7 @@ test('Kafka producer could write with blacklisted batched produce.', function te
 
     function generateSuccessCheck(next) {
         return function onSuccessResponse(err, res) {
-            assert.equal(producer.restClient.enable, true);
+            assert.equal(producer.producer.restClient.enable, true);
             assert.equal(err, null);
             assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
             next();
@@ -234,7 +234,7 @@ test('Kafka producer could write with blacklisted batched produce.', function te
 
     function generateErrorCheck(next) {
         return function onTopicNotFoundError(err, res) {
-            assert.equal(producer.restClient.enable, true);
+            assert.equal(producer.producer.restClient.enable, true);
             assert.throws(function throwError() {
                 if (err) {
                     throw new Error('Topics Not Found.');
@@ -263,13 +263,13 @@ test('Kafka producer could write with whitelisted batched produce.', function te
     var producer = new KafkaProducer(configs);
     // Override the batch function to always return an error, `testTopic1` should not hit this,
     // but `testTopic0` should
-    producer.batch = function batchOverride(topic, message, timestamp, callback) {
+    producer.producer.batch = function batchOverride(topic, message, timestamp, callback) {
         callback('This errors');
     };
     producer.connect(onConnect);
 
     function onConnect() {
-        assert.equal(producer.restClient.enable, true);
+        assert.equal(producer.producer.restClient.enable, true);
         async.parallel([
             function test1(next) {
                 producer.produce('testTopic0', 'Important message', generateErrorCheck(next));
@@ -286,7 +286,7 @@ test('Kafka producer could write with whitelisted batched produce.', function te
 
     function generateSuccessCheck(next) {
         return function onSuccessResponse(err, res) {
-            assert.equal(producer.restClient.enable, true);
+            assert.equal(producer.producer.restClient.enable, true);
             assert.equal(err, null);
             assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
             next();
@@ -295,7 +295,7 @@ test('Kafka producer could write with whitelisted batched produce.', function te
 
     function generateErrorCheck(next) {
         return function onTopicNotFoundError(err, res) {
-            assert.equal(producer.restClient.enable, true);
+            assert.equal(producer.producer.restClient.enable, true);
             assert.throws(function throwError() {
                 if (err) {
                     throw new Error('Topics Not Found.');
@@ -321,7 +321,7 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
     producer.connect(onConnect);
 
     function onConnect() {
-        assert.equal(producer.restClient.enable, true);
+        assert.equal(producer.producer.restClient.enable, true);
         async.parallel([
             function test1(next) {
                 producer.produce('testTopic0', 'Important message', generateSuccessCheck(next));
@@ -338,7 +338,7 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
 
     function generateSuccessCheck(next) {
         return function onSuccessResponse(err, res) {
-            assert.equal(producer.restClient.enable, true);
+            assert.equal(producer.producer.restClient.enable, true);
             assert.equal(err, null);
             assert.equal(res, '{ version : 1, Status : SENT, message : {}}');
             next();
@@ -347,7 +347,7 @@ test('Kafka producer could write with produce and blacklist.', function testKafk
 
     function generateErrorCheck(next) {
         return function onTopicNotFoundError(err, res) {
-            assert.equal(producer.restClient.enable, true);
+            assert.equal(producer.producer.restClient.enable, true);
             assert.throws(function throwError() {
                 if (err) {
                     throw new Error('Topics Not Found.');
@@ -368,7 +368,7 @@ test('Kafka producer handle unavailable proxy.', function testKafkaProducerHandl
     producer.connect(onConnect);
 
     function onConnect() {
-        assert.equal(producer.restClient.enable, false);
+        assert.equal(producer.producer.restClient.enable, false);
         function onClientNotEnableError(err, res) {
             assert.throws(function throwError() {
                 if (err) {
@@ -396,17 +396,17 @@ test('Kafka producer refresh.', function testKafkaProducerTopicRefresh(assert) {
 
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
-    assert.equal(producer.restClient.topicDiscoveryTimes, 0);
+    assert.equal(producer.producer.restClient.topicDiscoveryTimes, 0);
     function onConnect() {
         /* eslint-disable no-undef,block-scoped-var */
         setTimeout(function wait1() {
-            assert.equal(producer.restClient.topicDiscoveryTimes, 1);
+            assert.equal(producer.producer.restClient.topicDiscoveryTimes, 1);
         }, 500);
         setTimeout(function wait2() {
-            assert.equal(producer.restClient.topicDiscoveryTimes, 2);
+            assert.equal(producer.producer.restClient.topicDiscoveryTimes, 2);
         }, 1500);
         setTimeout(function wait3() {
-            assert.equal(producer.restClient.topicDiscoveryTimes, 3);
+            assert.equal(producer.producer.restClient.topicDiscoveryTimes, 3);
         }, 2500);
         setTimeout(function stopTest2() {
             producer.close();
@@ -430,7 +430,7 @@ test('Test get whole msg', function testKafkaProducerGetWholeMsgFunction(assert)
     function onConnect() {
         var testTopic = 'testTopic0';
         var testMsg = 'testMsg0';
-        var wholeMsg = producer.getWholeMsg(testTopic, testMsg, testTimeStamp);
+        var wholeMsg = producer.producer.getWholeMsg(testTopic, testMsg, testTimeStamp);
 
         assert.equal(wholeMsg.host, hostName);
         assert.equal(wholeMsg.msg, testMsg);
@@ -455,7 +455,7 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
     function onConnect() {
-        assert.equal(producer.restClient.enable, true);
+        assert.equal(producer.producer.restClient.enable, true);
         for (var i = 0; i < 5120000; i++) {
             producer.produce('testTopic0', 'Important message', Date.now() / 1000.0);
         }
@@ -468,8 +468,8 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
         producer.log_line('testTopic2', 'Important message');
 
         // C3 and C2 use the same functions to generate audit msgs
-        var auditMsgs = producer._generateAuditMsgs(producer.auditTier, producer.auditDatacenter,
-            producer.topicToMsgcntMaps);
+        var auditMsgs = producer.producer._generateAuditMsgs(producer.auditTier, producer.auditDatacenter,
+            producer.producer.topicToMsgcntMaps);
         var cntTestTopic0 = 0;
         var cntTestTopic1 = 0;
         var cntTestTopic2 = 0;
@@ -520,11 +520,11 @@ test('kafkaProducer handle failed rest proxy connection', function testKafkaProd
 
     var kafkaProducer = new KafkaProducer(configs);
     kafkaProducer.connect(function assertErrorThrows() {
-        assert.equal(kafkaProducer.restClient.enable, false);
+        assert.equal(kafkaProducer.producer.restClient.enable, false);
         server.start();
         /* eslint-disable no-undef,block-scoped-var */
         setTimeout(function stopTest1() {
-            assert.equal(kafkaProducer.restClient.enable, true);
+            assert.equal(kafkaProducer.producer.restClient.enable, true);
             kafkaProducer.close();
             server.stop();
             assert.end();
@@ -542,7 +542,7 @@ test('kafkaProducer handle no meta data situation', function testKafkaProducerHa
     };
     var kafkaProducer = new KafkaProducer(configs);
     kafkaProducer.connect(function assertErrorThrows() {
-        assert.equal(kafkaProducer.restClient.enable, false);
+        assert.equal(kafkaProducer.producer.restClient.enable, false);
         async.parallel([
             function test1(next) {
                 kafkaProducer.produce('testTopic0', 'Important message', Date.now() / 1000.0,
