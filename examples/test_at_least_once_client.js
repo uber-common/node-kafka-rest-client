@@ -52,6 +52,7 @@ function msgCallback(err, res) {
 /* eslint-enable no-undef,no-console,block-scoped-var */
 
 kafkaDataProducer.produceSync('test_hongxu', new ProducerRecord({value: 'value hahaha'}), msgCallback);
+kafkaDataProducer.produceSync('test_hongxu', new ProducerRecord({key: 'test key', value: 'value hahaha'}), msgCallback);
 
 /* eslint-disable no-undef,block-scoped-var */
 setTimeout(function close() {

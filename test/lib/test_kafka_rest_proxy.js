@@ -44,7 +44,11 @@ KafkaRestProxyServer.prototype.handle = function handle(req, res) {
         res.end(JSON.stringify(messages));
     } else if (req.method === 'POST') {
         if (req.headers.timestamp) {
-            res.end('{ version : 1, Status : SENT, message : {}}');
+            if (req.headers['record-key']) {
+                res.end('{ version : 1, Status : SENT, message : {}, key : ' + req.headers['record-key'] + '}');
+            } else {
+                res.end('{ version : 1, Status : SENT, message : {}}');
+            }
         } else {
             res.end('Not found timestamp field in request header!');
         }
