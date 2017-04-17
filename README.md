@@ -2,7 +2,7 @@
 
 A rest client for producing JSON and binary messages to kafka.
 
-## Usage
+e
 
 ```js
 var KafkaRestClient = require('kafka-rest-client');
