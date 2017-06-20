@@ -24,7 +24,7 @@ KafkaProducer constructor accepts these options:
   - `proxyHost` - Rest proxy hostname to produce kafka messages (default: `localhost`)
   - `proxyPort` - Rest proxy port to produce kafka messages (required)
 
-##Install
+## Install
 
     npm install kafka-rest-client
 
