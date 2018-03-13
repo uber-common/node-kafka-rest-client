@@ -25,6 +25,7 @@ var test = require('tape');
 var async = require('async');
 var KafkaRestProxyServer = require('./lib/test_kafka_rest_proxy');
 var KafkaRestClient = rewire('../lib/kafka_rest_client');
+var os = require('os');
 
 KafkaRestClient.__set__({
     'KafkaRestClient.prototype.getTopicRequestBody': function getTopicRequestBodyMock(proxyHost, proxyPort, callback) {
@@ -223,4 +224,69 @@ test('KafkaRestClient handle post with blacklist client', function testKafkaRest
         restClient.close();
         assert.end();
     });
+});
+
+test('KafkaRestClient can apply lineage header correctly', function testKafkaRestClientLineageHeader(assert) {
+    var configs = {
+        proxyHost: 'localhost',
+        proxyPort: 4444,
+        proxyRefreshTime: 0
+    };
+
+    /* global process */
+    /* eslint-disable no-process-env */
+
+    // case 1: pass in applicationName directly. use it
+    process.env.UDEPLOY_APP_ID = 'Pickle!';
+    var restClient = new KafkaRestClient({
+        proxyHost: configs.proxyHost,
+        proxyPort: configs.proxyPort,
+        refreshTime: configs.proxyRefreshTime,
+        maxRetries: 3,
+        applicationName: 'Rick and Morty'
+    });
+    assert.equal(restClient.lineageHeader, 'x-uber-source');
+    assert.equal(restClient.applicationName, 'Rick and Morty');
+
+    process.env.UDEPLOY_APP_ID = '';
+    var restClient2 = new KafkaRestClient({
+        proxyHost: configs.proxyHost,
+        proxyPort: configs.proxyPort,
+        refreshTime: configs.proxyRefreshTime,
+        maxRetries: 3
+    });
+    assert.equal(restClient2.lineageHeader, 'x-uber-source');
+    assert.equal(restClient2.applicationNameEnv, 'UDEPLOY_APP_ID');
+    assert.assert(restClient2.applicationName.indexOf('node-kafka-rest-client') > -1);
+    assert.assert(restClient2.applicationName.indexOf(os.hostname()) > -1);
+
+    process.env.UDEPLOY_APP_ID = 'Pickle!';
+    var restClient3 = new KafkaRestClient({
+        proxyHost: configs.proxyHost,
+        proxyPort: configs.proxyPort,
+        refreshTime: configs.proxyRefreshTime,
+        maxRetries: 3
+    });
+    assert.equal(restClient3.lineageHeader, 'x-uber-source');
+    assert.equal(restClient3.applicationNameEnv, 'UDEPLOY_APP_ID');
+    assert.equal(restClient3.applicationName, 'Pickle!');
+
+    process.env.UDEPLOY_APP_ID = 'Pickle!';
+    process.env.RICK_APP_ID = 'Meeseek';
+    var restClient4 = new KafkaRestClient({
+        proxyHost: configs.proxyHost,
+        proxyPort: configs.proxyPort,
+        refreshTime: configs.proxyRefreshTime,
+        maxRetries: 3,
+        applicationNameEnv: 'RICK_APP_ID',
+        lineageHeader: 'lineage-source'
+    });
+    assert.equal(restClient4.lineageHeader, 'lineage-source');
+    assert.equal(restClient4.applicationNameEnv, 'RICK_APP_ID');
+    assert.equal(restClient4.applicationName, 'Meeseek');
+
+    assert.end();
+
+    /* eslint-enable no-process-env */
+
 });

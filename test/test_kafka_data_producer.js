@@ -85,7 +85,8 @@ test('Kafka producer could write with produce.', function testKafkaProducer(asse
                 producer.produceSync('testTopic0', new ProducerRecord({value: 'value'}), generateSuccessCheck(next));
             },
             function testWithKeyAndValue(next) {
-                producer.produceSync('testTopic1', new ProducerRecord({key: 'test_key', value: 'value'}), generateSuccessCheckWithKey(next));
+                producer.produceSync('testTopic1', new ProducerRecord({key: 'test_key', value: 'value'}),
+                    generateSuccessCheckWithKey(next));
             },
             function testWithoutValue(next) {
                 producer.produceSync('testTopic10', new ProducerRecord({key: 'test_key'}), generateErrorCheck(next));
