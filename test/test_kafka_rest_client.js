@@ -38,6 +38,15 @@ KafkaRestClient.__set__({
     }
 });
 
+function getProduceMessage(topic, message, ts, type) {
+    var produceMessage = {};
+    produceMessage.topic = topic;
+    produceMessage.message = message;
+    produceMessage.timeStamp = ts;
+    produceMessage.type = type;
+    return produceMessage;
+}
+
 test('KafkaRestClient can discover topics', function testKafkaRestClientTopicDiscovery(assert) {
     var configs = {
         proxyHost: 'localhost',
@@ -79,15 +88,6 @@ test('KafkaRestClient handle failed post with retries', function testKafkaRestCl
         produceInterval: 100,
         refreshTime: configs.proxyRefreshTime
     });
-
-    function getProduceMessage(topic, message, ts, type) {
-        var produceMessage = {};
-        produceMessage.topic = topic;
-        produceMessage.message = message;
-        produceMessage.timeStamp = ts;
-        produceMessage.type = type;
-        return produceMessage;
-    }
 
     async.parallel([
         function test1(next) {
@@ -144,15 +144,6 @@ test('KafkaRestClient handle not cached topics', function testKafkaRestClientHan
         refreshTime: configs.proxyRefreshTime,
         produceInterval: 100
     });
-
-    function getProduceMessage(topic, message, ts, type) {
-        var produceMessage = {};
-        produceMessage.topic = topic;
-        produceMessage.message = message;
-        produceMessage.timeStamp = ts;
-        produceMessage.type = type;
-        return produceMessage;
-    }
 
     async.parallel([
         function test1(next) {
@@ -226,10 +217,40 @@ test('KafkaRestClient handle post with blacklist client', function testKafkaRest
     });
 });
 
-test('KafkaRestClient can apply lineage header correctly', function testKafkaRestClientLineageHeader(assert) {
+function verifyHeader(assert, PORT, restClient) {
+    var topicName = "LOGGING TOPICS";
+    var timeStamp = Date.now() / 1000.0;
+
+    function OverriddenHttpClient(expectedHeader, expectedAppName){
+        this.expectedHeader = expectedHeader;
+        this.expectedAppName = expectedAppName;
+        this.postMethodCalled = false;
+    }
+
+    OverriddenHttpClient.prototype.post = function post(reqOpts, msg, cb){
+        assert.true(this.expectedHeader in reqOpts.headers);
+        assert.equal(reqOpts.headers[this.expectedHeader], this.expectedAppName);
+        this.postMethodCalled = true;
+        //cb();
+    };
+
+    var mockedHttpClient = new OverriddenHttpClient(restClient.lineageHeader, restClient.applicationName);
+    var urlPath = "localhost:" + PORT.toString();
+    restClient.urlToHttpClientMapping = {};
+    restClient.urlToHttpClientMapping[urlPath] = mockedHttpClient;
+    restClient.produce(getProduceMessage(topicName, 'bla', timeStamp, 'binary'),
+        function assertErrorThrows(err) {
+            console.log(err.reason);
+        });
+    assert.true(mockedHttpClient.postMethodCalled);
+}
+test('KafkaRestClient can apply lineage header config correctly', function testKafkaRestClientLineageHeaderConfig(assert) {
+    //Lets define a port we want to listen to
+    var PORT=15380;
+
     var configs = {
         proxyHost: 'localhost',
-        proxyPort: 4444,
+        proxyPort: PORT,
         proxyRefreshTime: 0
     };
 
@@ -247,6 +268,7 @@ test('KafkaRestClient can apply lineage header correctly', function testKafkaRes
     });
     assert.equal(restClient.lineageHeader, 'x-uber-source');
     assert.equal(restClient.applicationName, 'Rick and Morty');
+    verifyHeader(assert, PORT, restClient);
 
     process.env.UDEPLOY_APP_ID = '';
     var restClient2 = new KafkaRestClient({
@@ -259,6 +281,7 @@ test('KafkaRestClient can apply lineage header correctly', function testKafkaRes
     assert.equal(restClient2.applicationNameEnv, 'UDEPLOY_APP_ID');
     assert.assert(restClient2.applicationName.indexOf('node-kafka-rest-client') > -1);
     assert.assert(restClient2.applicationName.indexOf(os.hostname()) > -1);
+    verifyHeader(assert, PORT, restClient2);
 
     process.env.UDEPLOY_APP_ID = 'Pickle!';
     var restClient3 = new KafkaRestClient({
@@ -270,6 +293,7 @@ test('KafkaRestClient can apply lineage header correctly', function testKafkaRes
     assert.equal(restClient3.lineageHeader, 'x-uber-source');
     assert.equal(restClient3.applicationNameEnv, 'UDEPLOY_APP_ID');
     assert.equal(restClient3.applicationName, 'Pickle!');
+    verifyHeader(assert, PORT, restClient3);
 
     process.env.UDEPLOY_APP_ID = 'Pickle!';
     process.env.RICK_APP_ID = 'Meeseek';
@@ -285,8 +309,8 @@ test('KafkaRestClient can apply lineage header correctly', function testKafkaRes
     assert.equal(restClient4.applicationNameEnv, 'RICK_APP_ID');
     assert.equal(restClient4.applicationName, 'Meeseek');
 
+    verifyHeader(assert, PORT, restClient4);
     assert.end();
 
-    /* eslint-enable no-process-env */
 
 });
