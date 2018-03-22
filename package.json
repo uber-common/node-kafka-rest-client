@@ -8,7 +8,8 @@
   "main": "./index.js",
   "dependencies": {
     "error": "^7.0.1",
-    "lb_pool": "^1.2.0"
+    "lb_pool": "^1.2.0",
+    "pkginfo": "^0.4.1"
   },
   "devDependencies": {
     "async": "^1.5.2",

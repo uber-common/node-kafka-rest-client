@@ -221,20 +221,23 @@ function verifyHeader(assert, PORT, restClient) {
     var topicName = "LOGGING TOPICS";
     var timeStamp = Date.now() / 1000.0;
 
-    function OverriddenHttpClient(expectedHeader, expectedAppName){
+    function OverriddenHttpClient(expectedHeader, expectedAppName, expectedClientVersionHeader){
         this.expectedHeader = expectedHeader;
         this.expectedAppName = expectedAppName;
         this.postMethodCalled = false;
+        this.expectedClientVersionHeader = expectedClientVersionHeader;
     }
 
     OverriddenHttpClient.prototype.post = function post(reqOpts, msg, cb){
         assert.true(this.expectedHeader in reqOpts.headers);
         assert.equal(reqOpts.headers[this.expectedHeader], this.expectedAppName);
+        assert.true(reqOpts.headers[this.expectedClientVersionHeader].indexOf('node') >= 0);
         this.postMethodCalled = true;
         //cb();
     };
 
-    var mockedHttpClient = new OverriddenHttpClient(restClient.lineageHeader, restClient.applicationName);
+    var mockedHttpClient = new OverriddenHttpClient(restClient.lineageHeader,
+        restClient.applicationName, restClient.clientVersionHeader);
     var urlPath = "localhost:" + PORT.toString();
     restClient.urlToHttpClientMapping = {};
     restClient.urlToHttpClientMapping[urlPath] = mockedHttpClient;
@@ -270,6 +273,8 @@ test('KafkaRestClient can apply lineage header config correctly', function testK
     assert.equal(restClient.applicationName, 'Rick and Morty');
     verifyHeader(assert, PORT, restClient);
 
+    // case 2: pass in nothing, and no environment var,
+    //  result: generate default with client version and hostname
     process.env.UDEPLOY_APP_ID = '';
     var restClient2 = new KafkaRestClient({
         proxyHost: configs.proxyHost,
@@ -283,6 +288,8 @@ test('KafkaRestClient can apply lineage header config correctly', function testK
     assert.assert(restClient2.applicationName.indexOf(os.hostname()) > -1);
     verifyHeader(assert, PORT, restClient2);
 
+    // case 3: pass in nothing, but environment var has value,
+    //  result: generate name by environment variable value
     process.env.UDEPLOY_APP_ID = 'Pickle!';
     var restClient3 = new KafkaRestClient({
         proxyHost: configs.proxyHost,
@@ -295,6 +302,8 @@ test('KafkaRestClient can apply lineage header config correctly', function testK
     assert.equal(restClient3.applicationName, 'Pickle!');
     verifyHeader(assert, PORT, restClient3);
 
+    // case 4: pass in customized environment variable name, and customize header name
+    //  result: generate name by customized environment variable value with new header
     process.env.UDEPLOY_APP_ID = 'Pickle!';
     process.env.RICK_APP_ID = 'Meeseek';
     var restClient4 = new KafkaRestClient({
@@ -310,6 +319,26 @@ test('KafkaRestClient can apply lineage header config correctly', function testK
     assert.equal(restClient4.applicationName, 'Meeseek');
 
     verifyHeader(assert, PORT, restClient4);
+
+    // case 5: pass in customized environment variable name, and customize header name
+    //  result: generate name by customized environment variable value with new header
+    process.env.UDEPLOY_APP_ID = 'Pickle!';
+    process.env.RICK_APP_ID = 'Meeseek';
+    var restClient5 = new KafkaRestClient({
+        proxyHost: configs.proxyHost,
+        proxyPort: configs.proxyPort,
+        refreshTime: configs.proxyRefreshTime,
+        maxRetries: 3,
+        applicationNameEnv: 'RICK_APP_ID',
+        lineageHeader: 'lineage-source',
+        clientVersionHeader: 'x-client-id'
+    });
+    assert.equal(restClient5.lineageHeader, 'lineage-source');
+    assert.equal(restClient5.applicationNameEnv, 'RICK_APP_ID');
+    assert.equal(restClient5.applicationName, 'Meeseek');
+    assert.equal(restClient5.clientVersionHeader, 'x-client-id');
+
+    verifyHeader(assert, PORT, restClient5);
     assert.end();
 
 
