@@ -24,35 +24,19 @@ var test = require('tape');
 var utils = require('../lib/utils');
 
 test('getHostName can get meaningful results', function testGetHostName(assert) { // eslint-disable-line
-    var appName = utils.getApplicationName();
+    var appName = utils.getServiceName();
     assert.true(appName.length >= 1);
 });
 
 test('getLimitedLength can limit hostname length', function testGetLimitedLength(assert) { // eslint-disable-line
 
-    var appNameSimple = utils.getLimitedLength('zoidberg_pc', 'kafka_rest_client.js', 46);
-    assert.true(appNameSimple.indexOf('zoidberg_pc') >= 0);
-    assert.true(appNameSimple.indexOf('kafka_rest_client.js') >= 0);
-    assert.true(appNameSimple.indexOf('46') >= 0);
-
     var longHostName = 'a_very_long_host_name_01234567890abcdef_01234567890abcdef' +
         '01234567890abcdef_01234567890abcdef' + '01234567890abcdef_01234567890abcdef' +
         '01234567890abcdef_01234567890abcdef';
-    var appNameTruncatedHost = utils.getLimitedLength(longHostName, 'kafka_rest_client.js', 46);
+    var appNameTruncatedHost = utils.getLimitedLength(longHostName);
     assert.true(appNameTruncatedHost.indexOf(longHostName) < 0);
     assert.true(appNameTruncatedHost.indexOf(longHostName.substr(0, 24)) >= 0);
-    assert.true(appNameTruncatedHost.indexOf('kafka_rest_client.js') >= 0);
-    assert.true(appNameTruncatedHost.indexOf('46') >= 0);
 
-    var longProcessName = 'a_very_long_process_name_1234567890abcdef_01234567890abcdef' +
-        '01234567890abcdef_01234567890abcdef' + '01234567890abcdef_01234567890abcdef' +
-        '01234567890abcdef_01234567890abcdef';
-    var appNameTruncatedBoth = utils.getLimitedLength(longHostName, longProcessName, 46);
-    assert.true(appNameTruncatedBoth.indexOf(longHostName) < 0);
-    assert.true(appNameTruncatedBoth.indexOf(longHostName.substr(0, 24)) >= 0);
-    assert.true(appNameTruncatedBoth.indexOf(longProcessName) < 0);
-    assert.true(appNameTruncatedBoth.indexOf(longProcessName.substr(0, 24)) >= 0);
-    assert.true(appNameTruncatedBoth.indexOf('46') >= 0);
     assert.end();
 
 });
