@@ -27,6 +27,7 @@
         "setTimeout": true,
         "clearTimeout": true,
         "setInterval": true,
-        "clearInterval": true
+        "clearInterval": true,
+        "process": true
     }
 }

@@ -20,7 +20,23 @@
 
 'use strict';
 
-module.exports = require('./lib/kafka_producer');
-module.exports.KafkaDataProducer = require('./lib/kafka_data_producer');
-module.exports.ProducerRecord = require('./lib/producer_record');
-module.exports.version = require('./package.json').version;
+var test = require('tape');
+var utils = require('../lib/utils');
+
+test('getHostName can get meaningful results', function testGetHostName(assert) { // eslint-disable-line
+    var appName = utils.getServiceName();
+    assert.true(appName.length >= 1);
+});
+
+test('getLimitedLength can limit hostname length', function testGetLimitedLength(assert) { // eslint-disable-line
+
+    var longHostName = 'a_very_long_host_name_01234567890abcdef_01234567890abcdef' +
+        '01234567890abcdef_01234567890abcdef' + '01234567890abcdef_01234567890abcdef' +
+        '01234567890abcdef_01234567890abcdef';
+    var appNameTruncatedHost = utils.getLimitedLength(longHostName);
+    assert.true(appNameTruncatedHost.indexOf(longHostName) < 0);
+    assert.true(appNameTruncatedHost.indexOf(longHostName.substr(0, 24)) >= 0);
+
+    assert.end();
+
+});
