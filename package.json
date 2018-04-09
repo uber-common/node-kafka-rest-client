@@ -32,7 +32,7 @@
     "sinon": "*",
     "tape": "^4.2.0",
     "uber-licence": "^1.2.0",
-    "uber-standard": "^3.6.4"
+    "uber-standard": "^5.1.0"
   },
   "license": "MIT",
   "scripts": {
