@@ -20,7 +20,7 @@
     "itape": "^1.5.0",
     "jscoverage": "*",
     "jscs": "^1.7.3",
-    "jshint": "^2.5.2",
+    "jshint": "^2.9.5",
     "mocha": "*",
     "mockery": "*",
     "nodemock": "*",

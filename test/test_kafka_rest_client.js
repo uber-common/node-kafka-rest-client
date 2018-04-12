@@ -212,6 +212,7 @@ function verifyHeader(assert, PORT, restClient) {
     var topicName = 'LOGGING TOPICS';
     var timeStamp = Date.now() / 1000.0;
 
+    /* jshint maxparams: 5 */
     function OverriddenHttpClient(expectedServiceNameHeader, expectedServiceName, expectedClientVersionHeader,
                                   expectedInstanceNameHeader, expectedInstanceName) {
         this.expectedServiceNameHeader = expectedServiceNameHeader;
