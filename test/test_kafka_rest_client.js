@@ -240,7 +240,7 @@ function verifyHeader(assert, PORT, restClient) {
     restClient.urlToHttpClientMapping[urlPath] = mockedHttpClient;
     restClient.produce(getProduceMessage(topicName, 'bla', timeStamp, 'binary'),
         function assertErrorThrows(err) {
-            assert.true(err !== null);
+            assert.true(err !== null && err !== undefined);
         });
     assert.true(mockedHttpClient.postMethodCalled);
 }
