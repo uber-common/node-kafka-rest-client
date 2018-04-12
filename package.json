@@ -7,9 +7,11 @@
   ],
   "main": "./index.js",
   "dependencies": {
+    "@sinonjs/formatio": "^2.0.0",
     "error": "^7.0.1",
     "lb_pool": "^1.2.0",
-    "pkginfo": "^0.4.1"
+    "pkginfo": "^0.4.1",
+    "sinon": "^4.5.0"
   },
   "devDependencies": {
     "async": "^1.5.2",
