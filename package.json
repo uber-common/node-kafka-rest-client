@@ -1,7 +1,7 @@
 {
   "name": "kafka-rest-client",
   "description": "Kafka rest client to produce json/binary messages",
-  "version": "1.9.5",
+  "version": "1.10.0",
   "contributors": [
     "Xiang Fu <xiangfu@uber.com>"
   ],
@@ -50,8 +50,12 @@
     "view-cover": "opn ./coverage/*/index.html"
   },
   "engine": {
-    "node": ">= 0.10.x"
+    "node": ">= 6.10.0"
   },
+   "engines": {
+     "node": "^6.10.0",
+     "npm": "4.0.5"
+   },
   "pre-commit": [
     "check-licence",
     "lint",
