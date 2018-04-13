@@ -186,15 +186,6 @@ test('KafkaRestClient handle post with blacklist client', function testKafkaRest
         produceInterval: 100
     });
 
-    function getProduceMessage(topic, message, ts, type) {
-        var produceMessage = {};
-        produceMessage.topic = topic;
-        produceMessage.message = message;
-        produceMessage.timeStamp = ts;
-        produceMessage.type = type;
-        return produceMessage;
-    }
-
     async.parallel([
         function test1(next) {
             restClient.produce(getProduceMessage('testTopic0', 'msg0', timeStamp, 'binary'),
@@ -218,11 +209,12 @@ test('KafkaRestClient handle post with blacklist client', function testKafkaRest
 });
 
 function verifyHeader(assert, PORT, restClient) {
-    var topicName = "LOGGING TOPICS";
+    var topicName = 'LOGGING TOPICS';
     var timeStamp = Date.now() / 1000.0;
 
+    /* jshint maxparams: 5 */
     function OverriddenHttpClient(expectedServiceNameHeader, expectedServiceName, expectedClientVersionHeader,
-                                  expectedInstanceNameHeader, expectedInstanceName){
+                                  expectedInstanceNameHeader, expectedInstanceName) {
         this.expectedServiceNameHeader = expectedServiceNameHeader;
         this.expectedServiceName = expectedServiceName;
         this.postMethodCalled = false;
@@ -231,147 +223,149 @@ function verifyHeader(assert, PORT, restClient) {
         this.expectedInstanceName = expectedInstanceName;
     }
 
-    OverriddenHttpClient.prototype.post = function post(reqOpts, msg, cb){
+    OverriddenHttpClient.prototype.post = function post(reqOpts, msg, cb) {
         assert.true(this.expectedServiceNameHeader in reqOpts.headers);
         assert.true(this.expectedInstanceNameHeader in reqOpts.headers);
         assert.equal(reqOpts.headers[this.expectedServiceNameHeader], this.expectedServiceName);
         assert.equal(reqOpts.headers[this.expectedInstanceNameHeader], this.expectedInstanceName);
         assert.true(reqOpts.headers[this.expectedClientVersionHeader].indexOf('node') >= 0);
         this.postMethodCalled = true;
-        //cb();
     };
 
     var mockedHttpClient = new OverriddenHttpClient(restClient.serviceNameHeader,
         restClient.serviceName, restClient.clientVersionHeader, restClient.instanceNameHeader,
         restClient.instanceName);
-    var urlPath = "localhost:" + PORT.toString();
+    var urlPath = 'localhost:' + PORT.toString();
     restClient.urlToHttpClientMapping = {};
     restClient.urlToHttpClientMapping[urlPath] = mockedHttpClient;
     restClient.produce(getProduceMessage(topicName, 'bla', timeStamp, 'binary'),
         function assertErrorThrows(err) {
-            console.log(err.reason);
+            assert.true(err !== null && err !== undefined);
         });
     assert.true(mockedHttpClient.postMethodCalled);
 }
-test('KafkaRestClient can apply lineage header config correctly', function testKafkaRestClientLineageHeaderConfig(assert) {
-    //Lets define a port we want to listen to
-    var PORT=15380;
 
-    var configs = {
-        proxyHost: 'localhost',
-        proxyPort: PORT,
-        proxyRefreshTime: 0
-    };
+/* eslint-disable max-statements */
+test('KafkaRestClient can apply lineage header config correctly',
+    function testKafkaRestClientLineageHeaderConfig(assert) {
+        // Lets define a port we want to listen to
+        var PORT = 15380;
 
-    /* global process */
-    /* eslint-disable no-process-env */
+        var configs = {
+            proxyHost: 'localhost',
+            proxyPort: PORT,
+            proxyRefreshTime: 0
+        };
 
-    // case 1: pass in serviceName directly. use it
-    process.env.UDEPLOY_APP_ID = 'Pickle!';
-    process.env.UDEPLOY_DEPLOYMENT_NAME = 'Beth';
-    var restClient = new KafkaRestClient({
-        proxyHost: configs.proxyHost,
-        proxyPort: configs.proxyPort,
-        refreshTime: configs.proxyRefreshTime,
-        maxRetries: 3,
-        serviceName: 'Rick and Morty',
-        instanceName: 'production #4'
+        /* global process */
+        /* eslint-disable no-process-env */
+
+        // case 1: pass in serviceName directly. use it
+        process.env.UDEPLOY_APP_ID = 'Pickle!';
+        process.env.UDEPLOY_DEPLOYMENT_NAME = 'Beth';
+        var restClient = new KafkaRestClient({
+            proxyHost: configs.proxyHost,
+            proxyPort: configs.proxyPort,
+            refreshTime: configs.proxyRefreshTime,
+            maxRetries: 3,
+            serviceName: 'Rick and Morty',
+            instanceName: 'production #4'
+        });
+        assert.equal(restClient.serviceNameHeader, 'kafka-rest-client-service-name');
+        assert.equal(restClient.serviceName, 'Rick and Morty');
+        assert.equal(restClient.instanceName, 'production #4');
+        assert.true(restClient.clientVersion.indexOf('node') > -1);
+        verifyHeader(assert, PORT, restClient);
+
+        // case 2: pass in nothing, and no environment var,
+        //  result: generate default with client version, service name, and instance name
+        process.env.UDEPLOY_APP_ID = '';
+        process.env.UDEPLOY_DEPLOYMENT_NAME = '';
+        var restClient2 = new KafkaRestClient({
+            proxyHost: configs.proxyHost,
+            proxyPort: configs.proxyPort,
+            refreshTime: configs.proxyRefreshTime,
+            maxRetries: 3
+        });
+        assert.equal(restClient2.serviceNameHeader, 'kafka-rest-client-service-name');
+        assert.equal(restClient2.serviceNameEnv, 'UDEPLOY_APP_ID');
+        assert.assert(restClient2.serviceName.indexOf('node-kafka-rest-client') > -1);
+        assert.assert(restClient2.instanceName.indexOf(os.hostname()) > -1);
+        assert.true(restClient2.clientVersion.indexOf('node') > -1);
+        verifyHeader(assert, PORT, restClient2);
+
+        // case 3: pass in nothing, but environment var has value,
+        //  result: generate name by environment variable value
+        process.env.UDEPLOY_APP_ID = 'Pickle!';
+        process.env.UDEPLOY_DEPLOYMENT_NAME = 'Planet-Express';
+        var restClient3 = new KafkaRestClient({
+            proxyHost: configs.proxyHost,
+            proxyPort: configs.proxyPort,
+            refreshTime: configs.proxyRefreshTime,
+            maxRetries: 3
+        });
+        assert.equal(restClient3.serviceNameHeader, 'kafka-rest-client-service-name');
+        assert.equal(restClient3.serviceNameEnv, 'UDEPLOY_APP_ID');
+        assert.equal(restClient3.instanceNameEnv, 'UDEPLOY_DEPLOYMENT_NAME');
+        assert.equal(restClient3.serviceName, 'Pickle!');
+        assert.assert(restClient3.instanceName, 'Planet-Express');
+        assert.true(restClient3.clientVersion.indexOf('node') > -1);
+
+        verifyHeader(assert, PORT, restClient3);
+
+        // case 4: pass in customized environment variable name, and customize header name
+        //  result: generate name by customized environment variable value with new header
+        process.env.UDEPLOY_APP_ID = 'Pickle!';
+        process.env.RICK_APP_ID = 'Meeseek';
+        process.env.UDEPLOY_DEPLOYMENT_NAME = 'Planet-Express';
+        process.env.MORTY_INSTANCE_ID = 'Citadel';
+        var restClient4 = new KafkaRestClient({
+            proxyHost: configs.proxyHost,
+            proxyPort: configs.proxyPort,
+            refreshTime: configs.proxyRefreshTime,
+            maxRetries: 3,
+            serviceNameEnv: 'RICK_APP_ID',
+            serviceNameHeader: 'lineage-source',
+            instanceNameEnv: 'MORTY_INSTANCE_ID',
+            instanceNameHeader: 'ricklantis-mixup'
+        });
+        assert.equal(restClient4.serviceNameHeader, 'lineage-source');
+        assert.equal(restClient4.serviceNameEnv, 'RICK_APP_ID');
+        assert.equal(restClient4.serviceName, 'Meeseek');
+        assert.equal(restClient4.instanceNameEnv, 'MORTY_INSTANCE_ID');
+        assert.equal(restClient4.instanceNameHeader, 'ricklantis-mixup');
+        assert.equal(restClient4.instanceName, 'Citadel');
+        assert.true(restClient4.clientVersion.indexOf('node') > -1);
+
+        verifyHeader(assert, PORT, restClient4);
+
+        // case 5: pass in everything in config
+        //  result: the instance name and service name provided is used
+        process.env.UDEPLOY_APP_ID = 'Pickle!';
+        process.env.RICK_APP_ID = 'Meeseek';
+        process.env.UDEPLOY_DEPLOYMENT_NAME = 'Planet-Express';
+        process.env.MORTY_INSTANCE_ID = 'Citadel';
+        var restClient5 = new KafkaRestClient({
+            proxyHost: configs.proxyHost,
+            proxyPort: configs.proxyPort,
+            refreshTime: configs.proxyRefreshTime,
+            maxRetries: 3,
+            serviceName: 'Meeseek',
+            serviceNameEnv: 'RICK_APP_ID',
+            serviceNameHeader: 'lineage-source',
+            instanceName: 'production #1',
+            instanceNameHeader: 'ricklantis-mixup',
+            clientVersionHeader: 'x-client-id'
+        });
+        assert.equal(restClient5.serviceNameHeader, 'lineage-source');
+        assert.equal(restClient5.serviceName, 'Meeseek');
+        assert.equal(restClient5.instanceNameHeader, 'ricklantis-mixup');
+        assert.equal(restClient5.instanceName, 'production #1');
+        assert.equal(restClient5.clientVersionHeader, 'x-client-id');
+        assert.true(restClient5.clientVersion.indexOf('node') > -1);
+
+        verifyHeader(assert, PORT, restClient5);
+        assert.end();
+
     });
-    assert.equal(restClient.serviceNameHeader, 'kafka-rest-client-service-name');
-    assert.equal(restClient.serviceName, 'Rick and Morty');
-    assert.equal(restClient.instanceName, 'production #4');
-    assert.true(restClient.clientVersion.indexOf('node') > -1);
-    verifyHeader(assert, PORT, restClient);
-
-    // case 2: pass in nothing, and no environment var,
-    //  result: generate default with client version, service name, and instance name
-    process.env.UDEPLOY_APP_ID = '';
-    process.env.UDEPLOY_DEPLOYMENT_NAME = '';
-    var restClient2 = new KafkaRestClient({
-        proxyHost: configs.proxyHost,
-        proxyPort: configs.proxyPort,
-        refreshTime: configs.proxyRefreshTime,
-        maxRetries: 3
-    });
-    assert.equal(restClient2.serviceNameHeader, 'kafka-rest-client-service-name');
-    assert.equal(restClient2.serviceNameEnv, 'UDEPLOY_APP_ID');
-    assert.assert(restClient2.serviceName.indexOf('node-kafka-rest-client') > -1);
-    assert.assert(restClient2.instanceName.indexOf(os.hostname()) > -1);
-    assert.true(restClient2.clientVersion.indexOf('node') > -1);
-    verifyHeader(assert, PORT, restClient2);
-
-    // case 3: pass in nothing, but environment var has value,
-    //  result: generate name by environment variable value
-    process.env.UDEPLOY_APP_ID = 'Pickle!';
-    process.env.UDEPLOY_DEPLOYMENT_NAME = 'Planet-Express';
-    var restClient3 = new KafkaRestClient({
-        proxyHost: configs.proxyHost,
-        proxyPort: configs.proxyPort,
-        refreshTime: configs.proxyRefreshTime,
-        maxRetries: 3
-    });
-    assert.equal(restClient3.serviceNameHeader, 'kafka-rest-client-service-name');
-    assert.equal(restClient3.serviceNameEnv, 'UDEPLOY_APP_ID');
-    assert.equal(restClient3.instanceNameEnv, 'UDEPLOY_DEPLOYMENT_NAME');
-    assert.equal(restClient3.serviceName, 'Pickle!');
-    assert.assert(restClient3.instanceName, 'Planet-Express');
-    assert.true(restClient3.clientVersion.indexOf('node') > -1);
-
-    verifyHeader(assert, PORT, restClient3);
-
-    // case 4: pass in customized environment variable name, and customize header name
-    //  result: generate name by customized environment variable value with new header
-    process.env.UDEPLOY_APP_ID = 'Pickle!';
-    process.env.RICK_APP_ID = 'Meeseek';
-    process.env.UDEPLOY_DEPLOYMENT_NAME = 'Planet-Express';
-    process.env.MORTY_INSTANCE_ID = 'Citadel';
-    var restClient4 = new KafkaRestClient({
-        proxyHost: configs.proxyHost,
-        proxyPort: configs.proxyPort,
-        refreshTime: configs.proxyRefreshTime,
-        maxRetries: 3,
-        serviceNameEnv: 'RICK_APP_ID',
-        serviceNameHeader: 'lineage-source',
-        instanceNameEnv: 'MORTY_INSTANCE_ID',
-        instanceNameHeader: 'ricklantis-mixup'
-    });
-    assert.equal(restClient4.serviceNameHeader, 'lineage-source');
-    assert.equal(restClient4.serviceNameEnv, 'RICK_APP_ID');
-    assert.equal(restClient4.serviceName, 'Meeseek');
-    assert.equal(restClient4.instanceNameEnv, 'MORTY_INSTANCE_ID');
-    assert.equal(restClient4.instanceNameHeader, 'ricklantis-mixup');
-    assert.equal(restClient4.instanceName, 'Citadel');
-    assert.true(restClient4.clientVersion.indexOf('node') > -1);
-
-    verifyHeader(assert, PORT, restClient4);
-
-    // case 5: pass in everything in config
-    //  result: the instance name and service name provided is used
-    process.env.UDEPLOY_APP_ID = 'Pickle!';
-    process.env.RICK_APP_ID = 'Meeseek';
-    process.env.UDEPLOY_DEPLOYMENT_NAME = 'Planet-Express';
-    process.env.MORTY_INSTANCE_ID = 'Citadel';
-    var restClient5 = new KafkaRestClient({
-        proxyHost: configs.proxyHost,
-        proxyPort: configs.proxyPort,
-        refreshTime: configs.proxyRefreshTime,
-        maxRetries: 3,
-        serviceName: 'Meeseek',
-        serviceNameEnv: 'RICK_APP_ID',
-        serviceNameHeader: 'lineage-source',
-        instanceName: 'production #1',
-        instanceNameHeader: 'ricklantis-mixup',
-        clientVersionHeader: 'x-client-id'
-    });
-    assert.equal(restClient5.serviceNameHeader, 'lineage-source');
-    assert.equal(restClient5.serviceName, 'Meeseek');
-    assert.equal(restClient5.instanceNameHeader, 'ricklantis-mixup');
-    assert.equal(restClient5.instanceName, 'production #1');
-    assert.equal(restClient5.clientVersionHeader, 'x-client-id');
-    assert.true(restClient5.clientVersion.indexOf('node') > -1);
-
-    verifyHeader(assert, PORT, restClient5);
-    assert.end();
-
-
-});
+/* eslint-enable max-statements */

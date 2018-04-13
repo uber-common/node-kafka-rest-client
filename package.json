@@ -7,9 +7,11 @@
   ],
   "main": "./index.js",
   "dependencies": {
+    "@sinonjs/formatio": "^2.0.0",
     "error": "^7.0.1",
     "lb_pool": "^1.2.0",
-    "pkginfo": "^0.4.1"
+    "pkginfo": "^0.4.1",
+    "sinon": "^4.5.0"
   },
   "devDependencies": {
     "async": "^1.5.2",
@@ -20,7 +22,7 @@
     "itape": "^1.5.0",
     "jscoverage": "*",
     "jscs": "^1.7.3",
-    "jshint": "^2.5.2",
+    "jshint": "^2.9.5",
     "mocha": "*",
     "mockery": "*",
     "nodemock": "*",
@@ -32,7 +34,7 @@
     "sinon": "*",
     "tape": "^4.2.0",
     "uber-licence": "^1.2.0",
-    "uber-standard": "^3.6.4"
+    "uber-standard": "^5.1.0"
   },
   "license": "MIT",
   "scripts": {

@@ -473,6 +473,8 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
         var cntTestTopic0 = 0;
         var cntTestTopic1 = 0;
         var cntTestTopic2 = 0;
+
+        /* eslint-disable block-scoped-var */
         for (i = 0; i < auditMsgs.length; i++) {
             var auditMsg = auditMsgs[i];
             var json = JSON.parse(auditMsg);
@@ -487,6 +489,7 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
             }
             assert.equal(json.version, KafkaVersion);
         }
+        /* eslint-enable block-scoped-var */
 
         assert.equal(cntTestTopic0, 5120000);
         assert.equal(cntTestTopic1, 2);
