@@ -557,7 +557,7 @@ test('kafkaProducer handle no meta data situation', function testKafkaProducerHa
             function test2(next) {
                 kafkaProducer.produce('hp_testTopic0', 'Important message', Date.now() / 1000.0,
                     function assertErrorThrows2(err) {
-                        assert.equal(err.reason, 'connect ECONNREFUSED');
+                        assert.true(err.reason.indexOf('connect ECONNREFUSED') >= 0);
                         next();
                     });
             }

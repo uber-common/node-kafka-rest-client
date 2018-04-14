@@ -10,8 +10,7 @@
     "@sinonjs/formatio": "^2.0.0",
     "error": "^7.0.1",
     "lb_pool": "^1.2.0",
-    "pkginfo": "^0.4.1",
-    "sinon": "^4.5.0"
+    "pkginfo": "^0.4.1"
   },
   "devDependencies": {
     "async": "^1.5.2",
@@ -50,7 +49,7 @@
     "view-cover": "opn ./coverage/*/index.html"
   },
   "engine": {
-    "node": ">= 0.10.x"
+    "node": ">= 6.14.1"
   },
   "pre-commit": [
     "check-licence",
