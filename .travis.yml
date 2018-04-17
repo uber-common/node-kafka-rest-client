@@ -5,3 +5,5 @@ node_js:
 notifications:
   email:
     - xiangfu@uber.com
+
+before_install: if [[ `npm -v` != 2* ]]; then npm i -g npm@2; fi

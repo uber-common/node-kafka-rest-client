@@ -9,7 +9,7 @@
   "dependencies": {
     "@sinonjs/formatio": "^2.0.0",
     "error": "^7.0.1",
-    "lb_pool": "^1.2.0",
+    "lb_pool": "^1.7.1",
     "pkginfo": "^0.4.1",
     "sinon": "^4.5.0"
   },
@@ -50,11 +50,11 @@
     "view-cover": "opn ./coverage/*/index.html"
   },
   "engine": {
-    "node": ">= 6.10.0"
+    "node": ">= 0.10.32"
   },
    "engines": {
-     "node": "^6.10.0",
-     "npm": "4.0.5"
+     "node": "^0.10.32",
+     "npm": "2.15.11"
    },
   "pre-commit": [
     "check-licence",
