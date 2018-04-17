@@ -450,13 +450,15 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
         proxyHost: 'localhost',
         proxyPort: PORT,
         enableAudit: true,
-        auditTimeBucketIntervalInSec: 1
+        auditTimeBucketIntervalInSec: 1,
+        timeout: 0,
+        maxRetries: 0
     };
     var producer = new KafkaProducer(configs);
     producer.connect(onConnect);
     function onConnect() {
         assert.equal(producer.producer.restClient.enable, true);
-        for (var i = 0; i < 5120000; i++) {
+        for (var i = 0; i < 512000; i++) {
             producer.produce('testTopic0', 'Important message', Date.now() / 1000.0);
         }
         producer.produce('testTopic1', 'Important message', Date.now() / 1000.0);
@@ -491,7 +493,7 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
         }
         /* eslint-enable block-scoped-var */
 
-        assert.equal(cntTestTopic0, 5120000);
+        assert.equal(cntTestTopic0, 512000);
         assert.equal(cntTestTopic1, 2);
         assert.equal(cntTestTopic2, 3);
         assert.end();
@@ -499,10 +501,10 @@ test('Test generate audit msg', function testKafkaProducerGenerateAuditMsg(asser
         /* eslint-enable camelcase */
 
         /* eslint-disable no-undef,block-scoped-var */
+        server.stop();
         setTimeout(function stopTest1() {
-            server.stop();
             producer.close();
-        }, 2000);
+        }, 5000);
         /* eslint-enable no-undef,block-scoped-var */
     }
 });
@@ -557,7 +559,7 @@ test('kafkaProducer handle no meta data situation', function testKafkaProducerHa
             function test2(next) {
                 kafkaProducer.produce('hp_testTopic0', 'Important message', Date.now() / 1000.0,
                     function assertErrorThrows2(err) {
-                        assert.equal(err.reason, 'connect ECONNREFUSED');
+                        assert.true(err.reason.indexOf('connect ECONNREFUSED') >= 0);
                         next();
                     });
             }
