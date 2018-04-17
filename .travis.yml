@@ -6,4 +6,7 @@ notifications:
   email:
     - xiangfu@uber.com
 
-before_install: if [[ `npm -v` != 2* ]]; then npm i -g npm@2; fi
+before_install:
+  - if [[ `npm -v` != 2* ]]; then npm i -g npm@2; fi
+  - npm -v
+  - node -v

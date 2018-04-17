@@ -50,7 +50,7 @@ function getProduceMessage(topic, message, ts, type) {
 test('KafkaRestClient can discover topics', function testKafkaRestClientTopicDiscovery(assert) {
     var configs = {
         proxyHost: 'localhost',
-        proxyPort: 5555,
+        proxyPort: 4444,
         proxyRefreshTime: 0
     };
     var restClient = new KafkaRestClient({

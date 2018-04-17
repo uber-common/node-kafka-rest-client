@@ -29,7 +29,7 @@
     "opn": "^0.1.2",
     "pre-commit": "0.0.9",
     "proxyquire": "*",
-    "rewire": "*",
+    "rewire": "3.0.2",
     "should": "*",
     "sinon": "*",
     "tape": "^4.2.0",
