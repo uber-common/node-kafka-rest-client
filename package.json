@@ -52,8 +52,7 @@
     "node": ">= 0.10.32"
   },
   "engines": {
-    "node": "^0.10.32",
-    "npm": "2.15.11"
+    "node": ">= 0.10.32"
   },
   "pre-commit": [
     "check-licence",
