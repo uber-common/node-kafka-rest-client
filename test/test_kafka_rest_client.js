@@ -261,7 +261,7 @@ test('KafkaRestClient can apply lineage header config correctly',
         /* eslint-disable no-process-env */
 
         // case 1: pass in serviceName directly. use it
-        process.env.UDEPLOY_APP_ID = 'Pickle!';
+        process.env.UDEPLOY_SERVICE_NAME = 'Pickle!';
         process.env.UDEPLOY_DEPLOYMENT_NAME = 'Beth';
         var restClient = new KafkaRestClient({
             proxyHost: configs.proxyHost,
@@ -279,7 +279,7 @@ test('KafkaRestClient can apply lineage header config correctly',
 
         // case 2: pass in nothing, and no environment var,
         //  result: generate default with client version, service name, and instance name
-        process.env.UDEPLOY_APP_ID = '';
+        process.env.UDEPLOY_SERVICE_NAME = '';
         process.env.UDEPLOY_DEPLOYMENT_NAME = '';
         var restClient2 = new KafkaRestClient({
             proxyHost: configs.proxyHost,
@@ -288,7 +288,7 @@ test('KafkaRestClient can apply lineage header config correctly',
             maxRetries: 3
         });
         assert.equal(restClient2.serviceNameHeader, 'kafka-rest-client-service-name');
-        assert.equal(restClient2.serviceNameEnv, 'UDEPLOY_APP_ID');
+        assert.equal(restClient2.serviceNameEnv, 'UDEPLOY_SERVICE_NAME');
         assert.assert(restClient2.serviceName.indexOf('node-kafka-rest-client') > -1);
         assert.assert(restClient2.instanceName.indexOf(os.hostname()) > -1);
         assert.true(restClient2.clientVersion.indexOf('node') > -1);
@@ -296,7 +296,7 @@ test('KafkaRestClient can apply lineage header config correctly',
 
         // case 3: pass in nothing, but environment var has value,
         //  result: generate name by environment variable value
-        process.env.UDEPLOY_APP_ID = 'Pickle!';
+        process.env.UDEPLOY_SERVICE_NAME = 'Pickle!';
         process.env.UDEPLOY_DEPLOYMENT_NAME = 'Planet-Express';
         var restClient3 = new KafkaRestClient({
             proxyHost: configs.proxyHost,
@@ -305,7 +305,7 @@ test('KafkaRestClient can apply lineage header config correctly',
             maxRetries: 3
         });
         assert.equal(restClient3.serviceNameHeader, 'kafka-rest-client-service-name');
-        assert.equal(restClient3.serviceNameEnv, 'UDEPLOY_APP_ID');
+        assert.equal(restClient3.serviceNameEnv, 'UDEPLOY_SERVICE_NAME');
         assert.equal(restClient3.instanceNameEnv, 'UDEPLOY_DEPLOYMENT_NAME');
         assert.equal(restClient3.serviceName, 'Pickle!');
         assert.assert(restClient3.instanceName, 'Planet-Express');
@@ -315,7 +315,7 @@ test('KafkaRestClient can apply lineage header config correctly',
 
         // case 4: pass in customized environment variable name, and customize header name
         //  result: generate name by customized environment variable value with new header
-        process.env.UDEPLOY_APP_ID = 'Pickle!';
+        process.env.UDEPLOY_SERVICE_NAME = 'Pickle!';
         process.env.RICK_APP_ID = 'Meeseek';
         process.env.UDEPLOY_DEPLOYMENT_NAME = 'Planet-Express';
         process.env.MORTY_INSTANCE_ID = 'Citadel';
@@ -341,7 +341,7 @@ test('KafkaRestClient can apply lineage header config correctly',
 
         // case 5: pass in everything in config
         //  result: the instance name and service name provided is used
-        process.env.UDEPLOY_APP_ID = 'Pickle!';
+        process.env.UDEPLOY_SERVICE_NAME = 'Pickle!';
         process.env.RICK_APP_ID = 'Meeseek';
         process.env.UDEPLOY_DEPLOYMENT_NAME = 'Planet-Express';
         process.env.MORTY_INSTANCE_ID = 'Citadel';
